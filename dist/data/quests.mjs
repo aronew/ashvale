@@ -1,0 +1,267 @@
+// People of Ashvale and the work they need doing.
+// Everything here is data plus pure predicates over the game model.
+
+export const NPCS = {
+ wren:   { id:'wren', name:'Wren', title:'Keeper of the last hearth', zone:'vale', art:14, hue:0 },
+ tam:    { id:'tam', name:'Tam', title:'Forager', zone:'vale', art:14, hue:120,
+   idle:['“Moonleaf likes the wet ground by the garden. Cut it clean and it grows back.”',
+         '“You’re the one who lit the hearth? Half the vale felt that.”'] },
+ rowan:  { id:'rowan', name:'Rowan', title:'Road warden', zone:'vale', art:14, hue:35,
+   idle:['“West road’s open again, far as Hearthgate. Mind the wolves past the fork.”',
+         '“If you’re heading north into Whisperwood — don’t do it at night. I mean it.”'] },
+
+ dain:   { id:'dain', name:'Dain Orrek', title:'Forgewright of Hearthgate', zone:'forge', art:14, hue:20, forge:true,
+   idle:['“Bring me iron and coal and I’ll bring you something worth swinging.”',
+         '“A blade is a promise. Most people break theirs on the first rock.”'] },
+ mira:   { id:'mira', name:'Mira Vance', title:'Keeper of the Gilded Lantern', zone:'tavern', art:14, hue:340, shop:'tavern',
+   idle:['“Sit. Eat. The road will still be there.”',
+         '“Everyone in this town owes me money or an apology. Usually both.”'] },
+ bell:   { id:'bell', name:'Bell', title:'Clerk of the Wayfarers’ Hall', zone:'hall', art:14, hue:260, board:true,
+   idle:['“Work’s on the board. Pay’s on completion. Don’t argue with the board.”'] },
+ orin:   { id:'orin', name:'Captain Orin', title:'Hearthgate watch', zone:'town', art:14, hue:210,
+   idle:['“Twelve gone in three months. Twelve. And the Choir says it’s a blessing.”'] },
+ sera:   { id:'sera', name:'Sera Ilk', title:'Stillroom alchemist', zone:'town', art:14, hue:170, shop:'alchemy', alchemy:true,
+   idle:['“Crystal, moonleaf, patience. Two of those I can buy.”'] },
+ corvin: { id:'corvin', name:'Corvin', title:'Market trader', zone:'town', art:14, hue:45, shop:'general',
+   idle:['“Everything has a price. Mine are merely honest ones.”'] },
+ lys:    { id:'lys', name:'Lys', title:'Weaver', zone:'town', art:14, hue:290, loom:true,
+   idle:['“Bring me silk and I’ll dress you for whatever you’re walking into.”'] },
+ ondt:   { id:'ondt', name:'Ondt', title:'Canal fisher', zone:'town', art:14, hue:190,
+   idle:['“The canal used to run clear. Now it runs grey and I still fish it.”'] },
+ pim:    { id:'pim', name:'Pim', title:'Far too young for this', zone:'town', art:14, hue:60,
+   idle:['“Are you a real adventurer? You look tired for one.”'] },
+ hesta:  { id:'hesta', name:'Hesta', title:'Cook', zone:'town', art:14, hue:15,
+   idle:['“Half the town eats at my pot. The other half should.”'] },
+ aldric: { id:'aldric', name:'Brother Aldric', title:'Chapel of the Last Light', zone:'town', art:14, hue:50,
+   idle:['“We keep one candle burning. It has not gone out in ninety years.”'] },
+ vell:   { id:'vell', name:'Archivist Vell', title:'Keeper of what is left', zone:'town', art:14, hue:230,
+   idle:['“The Choir did not invent their god. They found him. That is far worse.”'] },
+ rook:   { id:'rook', name:'Gate-warden Rook', title:'East gate', zone:'town', art:14, hue:200,
+   idle:['“Gate shuts at dark. Be inside it or be somewhere better.”'] },
+ gwen:   { id:'gwen', name:'Gwen', title:'Stonemason', zone:'town', art:14, hue:25,
+   idle:['“The wall held for two hundred years. It’ll hold a while yet.”'] },
+ mabe:   { id:'mabe', name:'Old Mabe', title:'Remembers everything', zone:'town', art:14, hue:300,
+   idle:['“Ashvale had a hearth when I was a girl. I never thought I’d see it lit again.”'] },
+ jorin:  { id:'jorin', name:'Jorin', title:'Off-duty watchman', zone:'tavern', art:14, hue:205,
+   idle:['“You fight like someone who enjoys it. That’s not an insult.”'] },
+ tessa:  { id:'tessa', name:'Tessa', title:'Caravan guard', zone:'tavern', art:14, hue:130,
+   idle:['“Three hits then step out. Three hits then step out. That’s the whole trick.”'] },
+ bracken:{ id:'bracken', name:'Bracken', title:'Whisperwood ranger', zone:'forest', art:14, hue:110,
+   idle:['“The wood isn’t angry. It’s sick. There’s a difference and it matters.”'] },
+ nima:   { id:'nima', name:'Nima', title:'Hedge-witch of the hollow', zone:'forest', art:14, hue:275, alchemy:true,
+   idle:['“Magic is only attention, paid all at once.”'] },
+ gormel: { id:'gormel', name:'Gormel', title:'Warren miner', zone:'warren', art:14, hue:30,
+   idle:['“I’ve been down here eleven days. Ask me anything about rocks.”'] }
+};
+
+// --- shops ---------------------------------------------------------------
+export const SHOPS = {
+ general: { name:'Corvin’s stall', stock:[
+  { item:'potion', price:24 }, { item:'iron', price:16 }, { item:'coal', price:11 },
+  { item:'leather', price:14 }, { item:'wood', price:5 }, { item:'stone', price:6 }, { item:'herb', price:9 } ] },
+ tavern: { name:'The Gilded Lantern', stock:[
+  { item:'potion', price:20 }, { item:'elixir', price:85 }, { item:'herb', price:8 } ] },
+ alchemy: { name:'Sera’s stillroom', stock:[
+  { item:'elixir', price:70 }, { item:'crystal', price:52 }, { item:'herb', price:7 }, { item:'essence', price:12 } ] }
+};
+// What the shops will buy from you, in ember marks.
+export const SELL_PRICE = { wood:2, stone:2, herb:4, essence:5, iron:8, coal:5, leather:7, silk:9, fang:8, crystal:26, cinder:18, moonsteel:55, relic:70 };
+
+// --- quests --------------------------------------------------------------
+// step kinds: flag | talk | kill | collect | reach | interact
+const step = (kind, o) => ({ kind, ...o });
+
+export const QUESTS = [
+ { id:'q-hearth', chapter:1, main:true, title:'A light in the hollow', giver:'wren', auto:true,
+   summary:'Wren needs the village hearth lit before winter closes the road.',
+   steps:[ step('flag',{ flag:'met',     text:'Speak to Wren by the village hearth' }),
+           step('flag',{ flag:'cottage', text:'Restore the ruined workshop (12 timber, 8 stone)' }),
+           step('flag',{ flag:'boss',    text:'Defeat the Rootbound and take the Heart Spark' }),
+           step('flag',{ flag:'hearth',  text:'Rekindle the hearth of Ashvale' }) ],
+   reward:{} },
+
+ { id:'q-beacons', chapter:2, main:true, title:'The lights beyond', giver:'wren', auto:true, requires:['q-hearth'],
+   summary:'Three Moonfen beacons once guided travellers. Carry Ashvale’s light east.',
+   steps:[ step('flag',{ flag:'beacon0', text:'Light the Dawn beacon' }),
+           step('flag',{ flag:'beacon1', text:'Light the Mist beacon' }),
+           step('flag',{ flag:'beacon2', text:'Light the Dusk beacon' }) ],
+   reward:{} },
+
+ { id:'q-road', chapter:3, main:true, title:'The west road', giver:'wren', requires:['q-beacons'],
+   summary:'With the beacons burning the west road is walkable again. Hearthgate has not answered a letter in two months.',
+   brief:'“The road’s open. Hearthgate is the last town with its walls up — go west from the hollow and find their watch captain. Tell him Ashvale is lit.”',
+   steps:[ step('reach',{ zone:'town', text:'Follow the west road to Hearthgate' }),
+           step('talk',{ npc:'orin',   text:'Report to Captain Orin' }) ],
+   reward:{ xp:120, coin:80, items:{ potion:2 } },
+   done:'“Ashvale’s lit? Gods. Then there is one more light than there was.”' },
+
+ { id:'q-forge', chapter:3, main:true, title:'Relight the forge', giver:'dain', requires:['q-road'],
+   summary:'Dain’s forge has been cold since the mines closed. Iron and coal will change that.',
+   brief:'“Cold forge, cold town. Bring me eight iron and six coal and I’ll open the anvil to you — weapons, upgrades, all of it.”',
+   steps:[ step('collect',{ item:'iron', count:8, text:'Bring 8 iron ore' }),
+           step('collect',{ item:'coal', count:6, text:'Bring 6 coal' }) ],
+   reward:{ xp:140, coin:60, flag:'forgeOpen', items:{ moonsteel:1 } },
+   done:'“Listen to that. That’s a town waking up. Anvil’s yours, wayfarer.”' },
+
+ { id:'q-choir', chapter:3, main:true, title:'The Ashen Choir', giver:'orin', requires:['q-road'],
+   summary:'Twelve people have vanished from Hearthgate. The Choir sing under the chapel.',
+   brief:'“Twelve gone. The chapel crypt is the only door I can’t open. Go down. End whatever is singing.”',
+   steps:[ step('reach',{ zone:'crypt', text:'Descend into the Ashen Crypt' }),
+           step('kill',{ enemy:'choirlord', count:1, text:'Silence the Ashen Choirmaster' }),
+           step('talk',{ npc:'orin', text:'Return to Captain Orin' }) ],
+   reward:{ xp:400, coin:200, items:{ relic:1, elixir:2 }, outfit:'ashencloak' },
+   done:'“You went down there alone. Take the cloak off their altar — you earned the right to wear it.”' },
+
+ { id:'q-wood', chapter:4, main:true, title:'Roots and ruin', giver:'bracken', requires:['q-road'],
+   summary:'Whisperwood is dying from its centre outward. Its old guardian has turned.',
+   brief:'“The Warden used to keep this wood. Now it’s strangling it. South-east, the grove. I can’t make you go. I am asking.”',
+   steps:[ step('kill',{ enemy:'bramble', count:1, text:'Face the Bramble Warden in its grove' }),
+           step('talk',{ npc:'nima', text:'Bring the Heartwood Seed to Nima' }) ],
+   reward:{ xp:520, coin:180, items:{ seed:1 }, spell:'blink', recipe:'rootcleaver' },
+   done:'“It didn’t want to be what it became. Few things do. Give me the seed — and take this, you’ll need to move faster than you do.”' },
+
+ { id:'q-warren', chapter:5, main:true, title:'What digs upward', giver:'gormel', requires:['q-choir'],
+   summary:'The Warrens were a mine. Something under them started digging back.',
+   brief:'“Eleven days I’ve been down here. It took the others. It’s big and it swims through stone. Kill it and I’ll walk out behind you.”',
+   steps:[ step('kill',{ enemy:'devourer', count:1, text:'Destroy the Warren Devourer' }),
+           step('talk',{ npc:'gormel', text:'Get Gormel out alive' }) ],
+   reward:{ xp:700, coin:260, items:{ moonsteel:3, warrenkey:1, elixir:2 }, spell:'sunfall' },
+   done:'“Eleven days. And you did it in an afternoon. I’m buying, for the rest of my life.”' },
+
+ { id:'q-deep', chapter:6, main:true, title:'The fire beneath', giver:'dain', requires:['q-warren','q-wood'],
+   summary:'Every hearth in the vale draws from one fire, and something is sitting on it.',
+   brief:'“The Choir, the Warden, the thing in the Warrens — all of it comes up from one place. Forge the Hearthblade properly and go put it out.”',
+   steps:[ step('craft',{ weapon:'reforged', text:'Forge the Reforged Hearthblade' }),
+           step('reach',{ zone:'deep', text:'Descend into the Emberdeep' }),
+           step('kill',{ enemy:'tyrant', count:1, text:'End the Cinder Tyrant' }) ],
+   reward:{ xp:1500, coin:600, outfit:'emberheart', spell:'sunfall', flag:'ending' },
+   done:'“You walked into the fire under the world and walked out. Sit down. Somebody get this one a drink.”' },
+
+ // ---- side work ----------------------------------------------------------
+ { id:'s-nima', title:'Attention, paid all at once', giver:'nima', requires:['q-road'],
+   summary:'Nima will teach, if you bring her something worth teaching over.',
+   brief:'\u201cThree moon crystal and four silk. Magic is only attention, paid all at once \u2014 but attention needs somewhere to go.\u201d',
+   steps:[ step('collect',{ item:'crystal', count:3, text:'Bring 3 moon crystal' }),
+           step('collect',{ item:'silk', count:4, text:'Bring 4 spider silk' }) ],
+   reward:{ xp:300, coin:110, spell:'bolt', items:{ elixir:1 } },
+   done:'\u201cHold the spark loosely. It will find the next one on its own. There \u2014 that is Chain spark, and you have it now.\u201d' },
+
+ { id:'s-wolves', title:'Thinning the pack', giver:'bracken', requires:['q-road'],
+   summary:'Fen wolves have moved onto the ranger road in numbers that are not natural.',
+   brief:'“Eight wolves off the road and I’ll sleep. Bring me nothing — I’ll know.”',
+   steps:[ step('kill',{ enemy:'wolf', count:8, text:'Cull 8 fen wolves' }) ],
+   reward:{ xp:150, coin:70, items:{ leather:4, potion:2 } },
+   done:'“Quieter already. Here — hides, and something for the road.”' },
+
+ { id:'s-spiders', title:'Silkbacks', giver:'bracken', requires:['s-wolves'],
+   summary:'The silkbacks have spun the north trail shut.',
+   brief:'“Ten silkbacks. And bring the silk to Lys, she’ll make it worth more than I can.”',
+   steps:[ step('kill',{ enemy:'spider', count:10, text:'Clear 10 silkbacks' }) ],
+   reward:{ xp:260, coin:120, items:{ silk:6 }, recipe:'fenstalker' },
+   done:'“Trail’s walkable. Lys has the pattern for stalker leathers — tell her I sent you.”' },
+
+ { id:'s-silk', title:'A weaver’s order', giver:'lys', requires:['q-road'],
+   summary:'Lys can dress you for anything, given silk.',
+   brief:'“Six good silk and the loom is yours. I don’t barter, I trade — there’s a difference.”',
+   steps:[ step('collect',{ item:'silk', count:6, text:'Bring 6 spider silk' }) ],
+   reward:{ xp:120, coin:40, flag:'loomOpen', recipe:'hearthkeeper' },
+   done:'“Good hands. The loom is open to you — bring me materials and I’ll make you unrecognisable.”' },
+
+ { id:'s-brew', title:'Last call', giver:'mira', requires:['q-road'],
+   summary:'The Lantern has run dry of everything that helps.',
+   brief:'“Six moonleaf. My tonics keep half this town upright and I’m out.”',
+   steps:[ step('collect',{ item:'herb', count:6, text:'Bring 6 moonleaf' }) ],
+   reward:{ xp:90, coin:45, items:{ potion:3 } },
+   done:'“You’re all right. Tonics on the house — this time.”' },
+
+ { id:'s-ore', title:'The old seam', giver:'dain', requires:['q-forge'],
+   summary:'Dain wants a stockpile before he commits to the big work.',
+   brief:'“Twelve more iron. I want a stockpile, not a promise.”',
+   steps:[ step('collect',{ item:'iron', count:12, text:'Bring 12 iron ore' }) ],
+   reward:{ xp:200, coin:110, items:{ moonsteel:2 }, flag:'forgeDiscount' },
+   done:'“That’ll do. I’ll knock a tenth off everything I make you, for good.”' },
+
+ { id:'s-crystal', title:'Clear as the moon', giver:'sera', requires:['q-road'],
+   summary:'Sera can teach you a colder kind of fire, for a price in crystal.',
+   brief:'“Five moon crystal. Deep warrens, the bright gallery. Bring them and I’ll teach you frost.”',
+   steps:[ step('collect',{ item:'crystal', count:5, text:'Bring 5 moon crystal' }) ],
+   reward:{ xp:280, coin:90, spell:'frost', items:{ elixir:1 } },
+   done:'“Hold the cold in your chest, then let go. That’s all Frostbind is. Try not to enjoy it.”' },
+
+ { id:'s-shades', title:'What the candle keeps out', giver:'aldric', requires:['q-road'],
+   summary:'Ash shades gather wherever the Choir has been.',
+   brief:'“Eight shades. They cannot be reasoned with and they were people once. Be quick about it.”',
+   steps:[ step('kill',{ enemy:'shade', count:8, text:'Lay 8 ash shades to rest' }) ],
+   reward:{ xp:320, coin:130, spell:'ward' },
+   done:'“Take the warding light. It is not much. It has been enough, twice.”' },
+
+ { id:'s-relics', title:'What is left of us', giver:'vell', requires:['q-choir'],
+   summary:'Three relics survive from before the Choir. Vell wants them safe.',
+   brief:'“Three relics. Crypt, warrens, wherever they hoarded. History is the only thing I can still protect.”',
+   steps:[ step('collect',{ item:'relic', count:3, text:'Recover 3 ancient relics' }) ],
+   reward:{ xp:420, coin:220, recipe:'moonweave', items:{ moonsteel:2 } },
+   done:'“Thank you. Truly. Take the moonweave pattern to Lys — the old orders wore it for exactly this work.”' },
+
+ { id:'s-golems', title:'Standing stones that walk', giver:'orin', requires:['q-choir'],
+   summary:'Ash golems have started coming up the deep stair.',
+   brief:'“Four golems. My watch can hold a gate, not that. Plate’s yours if you manage it.”',
+   steps:[ step('kill',{ enemy:'golem', count:4, text:'Break 4 ash golems' }) ],
+   reward:{ xp:560, coin:260, recipe:'wardenplate' },
+   done:'“Watch plate. Made for people who stand where they are told. Suits you better than it should.”' },
+
+ { id:'s-cook', title:'Something warm', giver:'hesta', requires:['q-road'],
+   summary:'Hesta feeds half of Hearthgate and needs cave mushrooms for the pot.',
+   brief:'“Ten moonleaf or cavern shrooms, I’m not fussy. Half this town eats at my pot.”',
+   steps:[ step('collect',{ item:'herb', count:10, text:'Bring 10 moonleaf' }) ],
+   reward:{ xp:160, coin:60, items:{ elixir:1, potion:2 } },
+   done:'“Bless you. Eat something on your way out, you look like a coat on a stick.”' },
+
+ { id:'s-lamps', title:'Keep the gate lit', giver:'rook', requires:['q-road'],
+   summary:'Hearthgate’s lamps have gone dark one by one.',
+   brief:'“Six lamps out along the high street. Light them and the night gets smaller.”',
+   steps:[ step('interact',{ target:'lamp', count:6, text:'Relight 6 town lamps' }) ],
+   reward:{ xp:140, coin:75, items:{ potion:2 } },
+   done:'“Look at that. A street you can see the end of. Good work.”' },
+
+ { id:'s-cat', title:'Pim’s cat', giver:'pim', requires:['q-road'],
+   summary:'A small grey cat walked out of the north postern and did not come back.',
+   brief:'“Her name is Ash and she is grey and she is NOT lost, she is exploring. Please find her.”',
+   steps:[ step('interact',{ target:'cat', count:1, text:'Find Ash somewhere in Whisperwood' }),
+           step('talk',{ npc:'pim', text:'Bring Ash home to Pim' }) ],
+   reward:{ xp:130, coin:50, items:{ potion:2, elixir:1 } },
+   done:'“ASH! — she says thank you. She doesn’t, but I do.”' },
+
+ { id:'s-nets', title:'Grey water', giver:'ondt', requires:['q-road'],
+   summary:'Ondt’s nets are shredded and the canal keeps eating them.',
+   brief:'“Four silk and I can mend the nets. I’ll pay what I can, which is less than it’s worth.”',
+   steps:[ step('collect',{ item:'silk', count:4, text:'Bring 4 spider silk' }) ],
+   reward:{ xp:110, coin:70, items:{ potion:1 } },
+   done:'“Kind of you. Come back at dusk, I’ll have something worth eating.”' },
+
+ { id:'s-miner', title:'Eleven days', giver:'gormel', requires:['q-choir'],
+   summary:'Gormel is alive, out of food, and surrounded.',
+   brief:'“Crawlers. Everywhere. Twelve of them and I can get to the stair.”',
+   steps:[ step('kill',{ enemy:'crawler', count:12, text:'Clear 12 deep crawlers' }) ],
+   reward:{ xp:400, coin:170, items:{ crystal:3, iron:6 } },
+   done:'“I can hear my own breathing again. Take the crystals — I’ve no use for pretty rocks now.”' },
+
+ { id:'s-mabe', title:'A hearth she remembers', giver:'mabe', requires:['q-road'],
+   summary:'Old Mabe wants to see Ashvale’s hearth once more before she can’t.',
+   brief:'“Bring me an ember from Ashvale’s own hearth. Four ember dust, straight from the hollow.”',
+   steps:[ step('collect',{ item:'essence', count:4, text:'Bring 4 ember dust' }) ],
+   reward:{ xp:100, coin:40, items:{ potion:2 }, recipe:'moonsteel' },
+   done:'“There it is. Warm. Thank you, dear. Dain wrote down how to refine moonsteel — take it, he’ll only lose it.”' }
+];
+
+export const QUEST_BY_ID = Object.fromEntries(QUESTS.map(q => [q.id, q]));
+export const MAIN_LINE = QUESTS.filter(q => q.main).map(q => q.id);
+
+// Repeatable bounties from the Wayfarers' Hall board.
+export const BOUNTIES = [
+ { id:'b-wolf',   enemy:'wolf',      count:6,  coin:55,  xp:90,  name:'Wolf bounty' },
+ { id:'b-spider', enemy:'spider',    count:6,  coin:60,  xp:95,  name:'Silkback bounty' },
+ { id:'b-shade',  enemy:'shade',     count:5,  coin:95,  xp:150, name:'Shade bounty' },
+ { id:'b-brig',   enemy:'brigand',   count:5,  coin:110, xp:170, name:'Zealot bounty' },
+ { id:'b-rock',   enemy:'rockling',  count:4,  coin:120, xp:180, name:'Rockling bounty' },
+ { id:'b-imp',    enemy:'imp',       count:6,  coin:190, xp:280, name:'Cinder imp bounty' }
+];
