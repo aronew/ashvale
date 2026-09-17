@@ -116,6 +116,7 @@ function events(){
    case 'trade': A.tone(700,.12,'sine',.02); save(); break;
    case 'chest': A.tone(520,.25,'triangle',.028); break;
    case 'lamp': A.tone(760,.2,'sine',.022); break;
+   case 'locked': A.tone(110,.28,'square',.026); break;
    case 'level': UI.banner('Level ' + game.player.level); A.tone(660,.6); A.tone(880,.7,'sine',.025,.15); break;
    case 'unlock': A.tone(520,.5,'triangle',.03); A.tone(780,.6,'triangle',.025,.16); save(); break;
    case 'equip': save(); break;

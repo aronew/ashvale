@@ -249,7 +249,7 @@ export const PORTALS = [
  { id:'p-forest-town', zone:'forest', x:14,   y:47,   to:'town',   at:[37.5,6.5],label:'Ranger road',          sub:'South-west, back to Hearthgate’s postern.' },
  { id:'p-forest-warren',zone:'forest',x:67.5, y:7.5,  to:'warren', at:[12,54],   label:'The Warren mouth',     sub:'Cold air comes up out of the dark.' },
  { id:'p-warren-forest',zone:'warren',x:12,   y:56,   to:'forest', at:[67.5,10], label:'Back to the surface',  sub:'Daylight, somewhere up there.' },
- { id:'p-warren-deep', zone:'warren', x:70.5, y:9.5,  to:'deep',   at:[12,48],   label:'The deep stair',       sub:'Heat rises from the steps below.' },
+ { id:'p-warren-deep', zone:'warren', x:70.5, y:9.5,  to:'deep',   at:[12,48],   label:'The deep stair',       sub:'Heat rises from the steps below.', needs:'warrenkey', locked:'The stair is sealed behind the Devourer\u2019s tunnels. Whatever holds it shut, the thing in the pit was the key.' },
  { id:'p-deep-warren', zone:'deep',   x:12,   y:50,   to:'warren', at:[70.5,12], label:'Up the deep stair',    sub:'Back toward cold stone.' },
  { id:'p-town-crypt',  zone:'town',   x:19, y:10.5, to:'crypt',  at:[10,41],   label:'Crypt stair',          sub:'Beside the chapel. It has not been swept in years.' },
  { id:'p-crypt-town',  zone:'crypt',  x:10,   y:43,   to:'town',   at:[19,13.6],label:'Chapel stair',        sub:'Back up into the light.' },

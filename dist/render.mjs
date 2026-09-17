@@ -772,17 +772,20 @@ export function drawObject(ctx, o, t, game){
  const { x, y, type } = o;
  if(type === 'prop'){ drawProp(ctx, o, t, game); return; }
  if(type === 'portal'){
+  o.sealed = !!(o.needs && !(game.bag[o.needs] > 0));
   if(o.door){ ctx.globalAlpha = .55 + Math.sin(t*2)*.2; ctx.fillStyle = '#e9c880';
    ctx.font = '12px Georgia'; ctx.textAlign = 'center'; ctx.fillText('▼', x, y-30); ctx.globalAlpha = 1; return; }
   // A road marker: a lit waystone you can see from a distance.
   shadow(ctx,x,y,14,5);
   ctx.fillStyle = '#4a4850'; ctx.fillRect(x-9,y-34,18,34);
   ctx.fillStyle = '#5c5a64'; ctx.fillRect(x-12,y-40,24,8);
-  ctx.globalAlpha = .6+Math.sin(t*2)*.3; ctx.fillStyle = '#ffd493';
+  const sealed = o.sealed;
+  ctx.globalAlpha = sealed ? .45 : .6+Math.sin(t*2)*.3;
+  ctx.fillStyle = sealed ? '#7f8aa0' : '#ffd493';
   ctx.beginPath(); ctx.arc(x,y-46,5,0,7); ctx.fill(); ctx.globalAlpha = 1;
-  glow(ctx,x,y-46,56,'#ffc97a33');
-  ctx.font = '9px Georgia'; ctx.textAlign = 'center'; ctx.fillStyle = '#cbb894';
-  ctx.fillText(o.label.toUpperCase(), x, y-56);
+  if(!sealed) glow(ctx,x,y-46,56,'#ffc97a33');
+  ctx.font = '9px Georgia'; ctx.textAlign = 'center'; ctx.fillStyle = sealed ? '#8c8798' : '#cbb894';
+  ctx.fillText(o.label.toUpperCase() + (sealed ? ' \u00b7 SEALED' : ''), x, y-56);
   return;
  }
  if(type === 'plot'){ if(o.growing>0||o.ripe) drawSprite(ctx,15,x,y,o.ripe?29:18,o.ripe?28:18,{alpha:o.ripe?1:.7}); return; }

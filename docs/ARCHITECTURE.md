@@ -28,7 +28,7 @@ Objects and enemies live in **one flat array each**, tagged with a `zone`. `inde
 
 Tile codes 0–6 keep their original meanings (void, grass, path, water, stone, bridge, garden); 7–23 add cave, rock, dirt, wood, rug, lava, market, moss, crystal, ember, sand, cinder, chasm, wall, ash, thicket and field. `SOLID` lists what blocks movement; `HAZARD` lists floors that burn.
 
-Travel is by `portal` objects. `PORTALS` defines every pair two-way, with the arrival tile in the target zone. `setZone` clears transient state, nudges the player to open ground if the arrival tile is ever blocked, marks the zone visited, and fires a `zone` event.
+Travel is by `portal` objects. `PORTALS` defines every pair two-way, with the arrival tile in the target zone. `setZone` clears transient state, nudges the player to open ground if the arrival tile is ever blocked, marks the zone visited, and fires a `zone` event. A portal may carry `needs` (an item id) and `locked` (the line the player reads instead); the deep stair uses this, and the item it needs drops from the boss rather than from a quest hand-in, so the road can never be sealed by work the player has not turned in.
 
 ### Combat
 

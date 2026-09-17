@@ -112,6 +112,7 @@ travel('p-forest-warren');
 assert.equal(g.zone, 'warren');
 assert.equal(g.startQuest('q-warren'), true);
 assert.equal(slay('devourer', 1), 1, 'the Devourer must be reachable');
+assert.ok(g.bag.warrenkey >= 1, 'the Devourer itself drops the Warren sigil, so the stair cannot stay sealed');
 g.talkTo('gormel');
 assert.equal(g.completeQuest('q-warren'), true);
 assert.equal(g.spells.sunfall, true, 'the Warrens teach Sunfall');

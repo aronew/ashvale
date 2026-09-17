@@ -154,6 +154,7 @@ function itemsTab(g){
  }</div>
  <p>You carry <b>${g.bag.potion} healing tonics</b>${g.bag.elixir?` and <b>${g.bag.elixir} greater elixirs</b>`:''}${g.bag.core?' and the <span class="win">Heart Spark</span>':''}.</p>
  ${g.bag.seed?'<p class="win">You carry the Heartwood Seed.</p>':''}
+ ${g.bag.warrenkey?'<p class="win">You carry the Warren sigil \u2014 the deep stair will open for you.</p>':''}
  ${g.flags.beacons?'<p class="win">Hearthblade blessing · +8 attack, faster stamina recovery.</p>':''}
  <p class="muted">Strike trees, ore, iron, coal, crystal and cinder with your weapon to gather. Silk, mushrooms and bones are taken by hand with <b>E</b>. Sell spare material to Corvin in the Hearthgate market.</p>`;
 }

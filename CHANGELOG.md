@@ -30,6 +30,8 @@ visibly recolour the character. Three benches, three shops, an ember-mark econom
 pitched-roof buildings, twenty-five procedural props, a day/night cycle with real
 lighting, per-region music, and weapon-class combat sound.
 
+**Gating.** The deep stair stays sealed until the Warren Devourer drops its sigil, so the last dungeon cannot be wandered into at level five.
+
 **Persistence.** Save schema version 2 under the same storage key, with a tested version 1
 migration. Resource nodes regrow and ordinary enemies return; bosses stay dead.
 

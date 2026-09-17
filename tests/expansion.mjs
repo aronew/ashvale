@@ -395,6 +395,21 @@ const ok = m => done.push(m);
  ok('all items, weapons, outfits and spells are defined and obtainable');
 }
 
+{ // The deep stair stays shut until the Devourer has been dealt with.
+ const g = new Game();
+ g.setZone('warren', ...ZONES.warren.spawn, true);
+ const stair = g.objects.find(o => o.id === 'p-warren-deep');
+ g.player.x = stair.x; g.player.y = stair.y + 20;
+ assert.equal(g.nearest()?.id, 'p-warren-deep');
+ assert.ok(g.promptFor(stair).includes('sealed'), 'A sealed road says so before you press E');
+ g.interact();
+ assert.equal(g.zone, 'warren', 'The stair does not open without the sigil');
+ g.bag.warrenkey = 1;
+ g.player.x = stair.x; g.player.y = stair.y + 20;
+ g.interact();
+ assert.equal(g.zone, 'deep', 'The sigil opens it');
+ ok('the deep stair is gated by the Warren sigil');
+}
 { // Gathering: the sword breaks a node and the material lands in the pack.
  const g = new Game();
  const tree = g.props().find(o => o.type === 'tree' && !g.removed.has(o.id));

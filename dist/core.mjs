@@ -90,7 +90,7 @@ export class Game {
 
   const put = (id,zone,type,x,y,props={}) => { this.objects.push({ id, zone, type, x:x*TILE, y:y*TILE, hp:3, radius:0, ...props }); };
 
-  for(const p of PORTALS) put(p.id, p.zone, 'portal', p.x, p.y, { radius:0, to:p.to, at:p.at, label:p.label, sub:p.sub, door:!!p.door });
+  for(const p of PORTALS) put(p.id, p.zone, 'portal', p.x, p.y, { radius:0, to:p.to, at:p.at, label:p.label, sub:p.sub, door:!!p.door, needs:p.needs, locked:p.locked });
   for(const c of CHESTS) put(c.id, c.zone, 'chest', c.x, c.y, { radius:12, loot:c.loot });
   for(const [zone,list] of Object.entries(LAMPS)) list.forEach(([x,y],i)=>put(`lamp-${zone}-${i}`, zone, 'lamp', x, y, { radius:6, lit:zone!=='town'||i<9 }));
 
@@ -333,7 +333,9 @@ export class Game {
   } else if(d.boss){
    this.gain('coin', e.type==='tyrant'?400:180, e.x, e.y);
    if(e.type === 'bramble'){ this.gain('seed',1,e.x,e.y); }
-   if(e.type === 'devourer'){ this.gain('moonsteel',2,e.x,e.y); this.flags.warrenOpen = true; }
+   // The sigil drops from the thing itself, so the deep stair can never be
+   // left sealed by a quest the player has not handed in yet.
+   if(e.type === 'devourer'){ this.gain('moonsteel',2,e.x,e.y); this.gain('warrenkey',1,e.x,e.y); this.flags.warrenOpen = true; }
    if(e.type === 'choirlord'){ this.gain('relic',1,e.x,e.y); }
    if(e.type === 'tyrant'){ this.flags.ending = true; }
    this.event('boss-defeated',{ name:d.name, type:e.type });
@@ -773,7 +775,9 @@ export class Game {
  promptFor(o){
   if(!o) return '';
   switch(o.type){
-   case 'portal': return o.door ? o.label : 'Travel · ' + o.label;
+   case 'portal':
+    if(o.needs && !(this.bag[o.needs] > 0)) return o.label + ' · sealed';
+    return o.door ? o.label : 'Travel · ' + o.label;
    case 'npc': return 'Speak to ' + (NPCS[o.npc]?.name ?? 'someone');
    case 'chest': return 'Open supply cache';
    case 'lamp': return 'Relight the lamp';
@@ -794,6 +798,8 @@ export class Game {
   if(!o) return false;
   switch(o.type){
    case 'portal':
+    // A gated road tells you what is missing rather than simply refusing.
+    if(o.needs && !(this.bag[o.needs] > 0)){ this.toast(o.locked ?? 'This way is closed to you.'); this.event('locked'); return true; }
     this.setZone(o.to, o.at[0], o.at[1]);
     return true;
    case 'npc': this.flags.met = this.flags.met || o.npc === 'wren'; this.event('dialogue',{ npc:o.npc }); return true;
