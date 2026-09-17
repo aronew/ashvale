@@ -2,7 +2,7 @@
 
 ## Runtime
 
-A dependency-free static HTML application. `index.html` loads `game.js` as an ES module; it imports `core.mjs`, `render.mjs`, `ui.mjs` and `audio.mjs`, and `core.mjs` imports the four pure data modules under `dist/data/`. A modern browser supplies Canvas 2D, native dialog elements, localStorage, pointer events, requestAnimationFrame, and optional Web Audio. Optional WebMCP tools are feature-detected and are not required to play.
+A dependency-free static HTML application. `index.html` loads `game.js` as an ES module; it imports `core.mjs`, `render.mjs`, `ui.mjs` and `audio.mjs`, and `core.mjs` imports the four pure data modules under `dist/data/`. A modern browser supplies Canvas 2D, native dialog elements, localStorage, pointer events, requestAnimationFrame, and optional Web Audio. There is no ChatGPT/Sites runtime dependency or browser-agent tool registration.
 
 ```
 index.html
@@ -75,3 +75,4 @@ Rewards can grant experience, ember marks, items, a weapon, an outfit, a spell, 
 - **New item, outfit or spell:** add it to the tables and to a recipe or reward. The content-sanity test fails on anything unreachable or misspelt.
 - **New quest:** add it to `QUESTS` with a giver who exists, requirements that resolve, and steps whose targets exist. `tests/playthrough.mjs` will start and finish it.
 - **New combat animation:** change the swing table, never the renderer alone. Model impact timing and renderer phase read the same fields.
+

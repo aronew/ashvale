@@ -378,19 +378,3 @@ function prompt(cw, ch){
 }
 requestAnimationFrame(loop);
 UI.updateHud();
-
-// --------------------------------------------------- optional WebMCP tools
-if(document.modelContext?.registerTool){
- const controller = new AbortController();
- const register = t => { try { Promise.resolve(document.modelContext.registerTool(t, { signal:controller.signal })).catch(()=>{}); } catch {} };
- register({ name:'read_adventure', description:'Read the current player health, gear, supplies and quest progress in Ashvale.',
-  inputSchema:{ type:'object', properties:{}, additionalProperties:false }, annotations:{ readOnlyHint:true },
-  execute: () => ({ health:game.player.hp, level:game.player.level, region:ZONES[game.zone].name,
-   weapon:WEAPONS[game.gear.weapon].name, outfit:game.gear.outfit, supplies:{ ...game.bag },
-   milestones:{ ...game.flags },
-   quests:Object.fromEntries(Object.entries(game.quests).map(([k,v]) => [k, v.state])) }) });
- register({ name:'open_adventure_journal', description:'Open the quest journal in the game. Does not complete any quests.',
-  inputSchema:{ type:'object', properties:{}, additionalProperties:false }, annotations:{ readOnlyHint:false },
-  execute: () => { if(!started) throw new Error('Enter the hollow first.'); UI.journal(); return { opened:'journal' }; } });
- window.addEventListener('pagehide', () => controller.abort(), { once:true });
-}

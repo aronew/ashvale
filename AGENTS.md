@@ -33,4 +33,4 @@ Update relevant docs and `CHANGELOG.md` for user-visible changes. Include what c
 
 ## Publication
 
-GitHub is the source repository; the existing live site uses a separate Sites publishing pipeline. Do not claim a push automatically deploys it. Read `docs/DEPLOYMENT.md`, and never change the live audience, overwrite hosting identity, reset saves, force-push, or add secrets as incidental implementation work. Follow the user's publication instructions and the selected hosting provider's workflow.
+GitHub is the source of truth. The game runs independently of ChatGPT Sites. Follow `docs/DEPLOYMENT.md`: publish `dist/` through the owner-controlled GitHub Pages workflow or another explicitly chosen host. The Pages workflow validates all changes and deploys only when the owner opts in; do not enable a public audience, change repository visibility, reset saves, force-push, or add secrets incidentally. The old Sites address is a separate legacy copy. Do not create, reconnect, or republish a Sites copy unless the user explicitly asks for that copy to be updated. Verify the selected provider's successful deployment before claiming a live URL.

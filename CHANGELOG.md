@@ -1,5 +1,14 @@
 # Changelog
 
+## Independent hosting handoff
+
+- Made GitHub and owner-controlled static hosting the default workflow; ChatGPT Sites is only a separate legacy copy.
+- Removed optional browser-agent tool registration from the runtime.
+- Added an opt-in GitHub Pages workflow, test gates, and a downloadable standalone Actions artifact.
+- Documented private-repository eligibility, audience selection, custom hosting, and origin-specific save limitations.
+- Preserved Claude’s six-chapter expansion and melee animation rebuild.
+
+
 ## Combat readability and finding your way
 
 - **The melee animation is choreographed rather than rotated.** A swing was a
@@ -113,3 +122,4 @@ and real-device touch testing have **not** been done.
 ## Chapter I — The Hollow Wakes
 
 - Added original pixel-art exploration, gathering, inventory, crafting, farming, combat, village restoration, a guardian encounter, and browser-local saving.
+

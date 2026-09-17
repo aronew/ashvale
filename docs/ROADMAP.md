@@ -37,8 +37,9 @@ The original user direction is an Emberville-inspired dark top-down pixel-art ad
 - No multiplayer, cloud saves, save import/export, or procedural dungeon generation.
 - The vale's terrain and original entity order are frozen for save compatibility, so that region cannot be re-laid out without a migration.
 - Quest text is authored in one place now, but region descriptions still appear in both `ZONES` and the map panel.
-- No automatic GitHub→live deployment pipeline.
+- Independent GitHub Pages workflow is included; owner activation and a verified successful deployment are still required. Other static hosts can serve `dist/` directly.
 
 ## Planning an expansion
 
 Define the player goal, map access route, new mechanics, resource costs/rewards, stable IDs, save migration needs, asset requirements, and acceptance tests before expanding scope. Finish a coherent playable loop rather than adding disconnected decorative systems. The traversability, quest-coherence and playthrough tests will catch a region that cannot be walked, a quest that cannot be finished, and a reward that does not exist — add content and run them early.
+
