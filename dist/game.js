@@ -1,6 +1,6 @@
 // Browser layer: input, camera, the frame loop, and turning model events into
 // sound, panels and effects. All rules live in core.mjs.
-import { Game, TILE, clamp, ZONES, SPELLS, SPELL_ORDER, WEAPONS } from './core.mjs';
+import { Game, TILE, clamp, ZONES, SPELLS, SPELL_ORDER } from './core.mjs';
 import * as R from './render.mjs';
 import * as UI from './ui.mjs';
 import * as A from './audio.mjs';
