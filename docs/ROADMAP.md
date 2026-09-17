@@ -15,9 +15,9 @@ The original user direction is an Emberville-inspired dark top-down pixel-art ad
 ## Not yet verified
 
 - **Hand-played feel.** Nobody has sat down and played this with a keyboard for an hour. Pacing, difficulty curve, and whether the combat actually feels as good as it looks are unmeasured.
-- **Touch.** The touch action cluster is implemented and laid out but has not been used on a real phone.
+- **Touch.** Verified under Chromium device emulation at phone and tablet sizes: the d-pad moves, all eight action buttons register, and nothing overlaps in either corner. It has still never been used on real hardware, where thumb reach and button size are the things that actually matter.
 - **Long-session performance.** Measured at a locked 60fps in every region on a desktop Chromium, including a stress scene of thirty enemies and a boss. The largest zone bakes a 2688×1984 terrain canvas and three are cached, so memory on low-end mobile is still unmeasured. Never reintroduce a per-draw `ctx.filter`: it cost two thirds of the frame rate.
-- **Accessibility.** Reduced motion, text scaling, colour contrast on the smallest HUD labels and screen-reader behaviour of the new panels need a focused review.
+- **Accessibility.** Screen shake, time dilation and the low-health pulse honour `prefers-reduced-motion`. Text scaling, colour contrast on the smallest HUD labels and screen-reader behaviour of the new panels still need a focused review.
 
 ## Suggested next work
 

@@ -36,6 +36,12 @@ NPCs who sway, turn toward you and light up when you come close enough to talk. 
 fold in on themselves when killed instead of blinking out, and taking damage blooms red
 at the edges of the screen, which pulses steadily once you are nearly dead.
 
+**Touch.** A full eight-button action cluster (attack, heavy, dodge, spell, swap,
+focus, tonic, interact) sits in the bottom-right, the d-pad in the bottom-left, and the
+desktop hotbar collapses to its two utility slots. The touch buttons were previously
+unreachable behind the canvas; they are hit-testable now, verified at phone and tablet
+sizes. Screen shake, slow-motion and the low-health pulse honour prefers-reduced-motion.
+
 **Gating.** The deep stair stays sealed until the Warren Devourer drops its sigil, so the last dungeon cannot be wandered into at level five.
 
 **Persistence.** Save schema version 2 under the same storage key, with a tested version 1

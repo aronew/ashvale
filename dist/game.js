@@ -16,6 +16,11 @@ let started = false, ready = false;
 let keys = new Set(), pointerDown = false, heavyDown = false, pointerAim = false;
 let last = 0, hudTimer = 0, saveTimer = 0, hitstop = 0, shake = 0, zoom = 1.5;
 let cam = { x:0, y:0 }, camInit = false, ghostTimer = 0;
+// Screen shake and time dilation are the two things motion sensitivity cares
+// about most, so honour the browser preference for both.
+const calmQuery = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+let calm = !!calmQuery?.matches;
+calmQuery?.addEventListener?.('change', e => { calm = e.matches; });
 
 // -------------------------------------------------------------------- boot
 function uiApp(){
@@ -258,7 +263,7 @@ document.querySelectorAll('[data-action]').forEach(b => b.onclick = () => {
  else if(a === 'spell') action('cast');
  else action(a);
 });
-$('#spell-cycle')?.addEventListener('click', () => started && !panel.open && cycleSpell(1));
+for(const id of ['#spell-cycle','#touch-swap']) $(id)?.addEventListener('click', () => started && !panel.open && cycleSpell(1));
 
 const HELD = [' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','z','x','q','r','e','f','c'];
 window.addEventListener('keydown', e => {
@@ -320,7 +325,7 @@ function loop(now){
   const y = (keys.has('s')||keys.has('arrowdown')?1:0) - (keys.has('w')||keys.has('arrowup')?1:0);
   if(hitstop > 0) hitstop = Math.max(0, hitstop - dt);
   else {
-   const scale = game.slowmo > 0 ? .34 : 1;
+   const scale = (game.slowmo > 0 && !calm) ? .34 : 1;
    game.update(dt*scale, { x, y, attack: keys.has('z') || pointerDown, aim: pointerAim });
    // Dash afterimages, drawn from whatever the player is wearing.
    if(game.player.dash > 0){
@@ -333,7 +338,7 @@ function loop(now){
   if(saveTimer > 15){ save(); saveTimer = 0; }
  }
  R.stepFx(dt);
- shake = Math.max(0, shake - dt*18);
+ shake = calm ? 0 : Math.max(0, shake - dt*18);
 
  // Camera: follow with a little lead in the direction you are facing.
  const p = game.player, cw = canvas.width, ch = canvas.height;
@@ -344,7 +349,7 @@ function loop(now){
  if(!camInit){ cam.x = tx; cam.y = ty; camInit = true; }
  else { const k = Math.min(1, dt*7.5); cam.x += (tx-cam.x)*k; cam.y += (ty-cam.y)*k; }
 
- R.renderScene(ctx, game, cam, cw, ch, t, { shake });
+ R.renderScene(ctx, game, cam, cw, ch, t, { shake: calm ? 0 : shake });
  prompt(cw, ch);
 
  hudTimer += dt;

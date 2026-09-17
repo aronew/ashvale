@@ -10,6 +10,7 @@ import { drawMap } from './render.mjs';
 
 const $ = s => document.querySelector(s);
 let app = null, lastFocus = null, tab = 'items';
+const chatter = {};   // how many times we have spoken to each person this session
 export function initUI(a){ app = a; }
 const G = () => app.game;
 
@@ -299,7 +300,11 @@ export function dialogue(npcId){
    <p>${g.questProgress(active).map(s=>`${s.done?'✓':'◇'} ${s.text}`).join('<br>')}</p></div>`;
   actions = `<button class="primary" id="dialogue-done">Right you are.</button>`;
  } else {
-  line = npcId === 'wren' ? wrenLine(g) : (npc.idle ?? ['“Good road to you.”'])[Math.floor(g.time/17) % (npc.idle?.length ?? 1)];
+  // Rotate through what this person has to say, so talking twice is not the
+  // same conversation twice.
+  const lines = npc.idle ?? ['“Good road to you.”'];
+  const seen = (chatter[npcId] = (chatter[npcId] ?? -1) + 1);
+  line = npcId === 'wren' ? wrenLine(g) : lines[seen % lines.length];
   actions = `<button class="primary" id="dialogue-done">${npcId === 'wren' && topics.chapter ? 'I\u2019ll see what I can do.' : 'Good road to you.'}</button>`;
  }
  // Whoever is carrying the current chapter shows where it stands.
