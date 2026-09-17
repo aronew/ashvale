@@ -828,7 +828,11 @@ export function drawObject(ctx, o, t, game){
  shadow(ctx,x,y,w*.28,h*.07);
  let i = SPR[type]; if(type === 'ruin' && game.flags.cottage) i = 8;
  const bob = o.hit ? Math.sin(o.hit*70)*3 : 0;
- drawSprite(ctx, i, x+bob, y, w, h, { hit:o.hit>0,
+ // People breathe, and lean toward you when you come close enough to talk.
+ const sway = type === 'npc' ? Math.sin(t*1.6 + o.x*.05)*1.4 : 0;
+ const lean = type === 'npc' && distance(o, game.player) < 130
+  ? clamp((game.player.x - x)/260, -.09, .09) : 0;
+ drawSprite(ctx, i, x+bob, y+sway, w, h, { hit:o.hit>0, rotation:lean,
   dark: (type==='hearth' && !game.flags.hearth) || (type==='beacon' && !game.flags['beacon'+o.index]) || (type==='lamp' && o.lit===false) });
  if(type === 'beacon'){
   ctx.font = '11px Georgia'; ctx.textAlign = 'center';
@@ -836,6 +840,11 @@ export function drawObject(ctx, o, t, game){
   ctx.fillText(['Dawn beacon','Mist beacon','Dusk beacon'][o.index], x, y-h-5);
  }
  if(type === 'npc'){
+  const p = game.player, near = distance(o, p) < 130;
+  if(near){
+   ctx.globalAlpha = .18; ctx.fillStyle = '#e9c880';
+   ctx.beginPath(); ctx.ellipse(x, y+2, 22, 9, 0, 0, 7); ctx.fill(); ctx.globalAlpha = 1;
+  }
   const marker = npcMarker(game, o.npc);
   if(marker){ ctx.fillStyle = marker === '!' ? '#e9c880' : marker === '?' ? '#8fd6a8' : '#9aa6c0';
    ctx.font = 'bold 15px Georgia'; ctx.textAlign = 'center'; ctx.fillText(marker, x, y-h-6+Math.sin(t*3)*2); }
@@ -887,6 +896,14 @@ function drawFx(ctx, t){
   } else if(f.kind === 'ghost'){
    ctx.globalAlpha = (1-p)*.32;
    drawSprite(ctx, 0, f.x, f.y, 57, 65, { sprite:f.sprite, filter:'brightness(1.4) saturate(.5)' });
+  } else if(f.kind === 'death'){
+   // The body folds in on itself rather than blinking out of existence.
+   const d = ENEMIES[f.type];
+   ctx.globalAlpha = (1-p)*.85;
+   ctx.translate(f.x, f.y);
+   ctx.rotate(p*.5*(f.spin ?? 1));
+   ctx.scale(1 + p*.35, Math.max(.05, 1 - p*1.1));
+   drawSprite(ctx, d.sprite, 0, 0, d.w, d.h, { filter:TINTS[d.tint] });
   } else if(f.kind === 'ring'){
    ctx.globalCompositeOperation = 'lighter';
    ctx.globalAlpha = (1-p)*.6; ctx.strokeStyle = f.color ?? '#ffcf94'; ctx.lineWidth = 4*(1-p)+1;
@@ -1088,6 +1105,69 @@ function bossFlourish(ctx, e, d, t, fy){
 }
 
 // =========================================================================
+// Ambient life: the small moving things that stop a region looking painted.
+// Purely decorative, seeded per zone, and never touched by the model.
+// =========================================================================
+const AMBIENT = {
+ vale:   { kind:'bird',   count:6,  night:'firefly' },
+ town:   { kind:'bird',   count:5,  night:'moth' },
+ forest: { kind:'leaf',   count:14, night:'firefly' },
+ warren: { kind:'drip',   count:10 },
+ crypt:  { kind:'drip',   count:8 },
+ deep:   { kind:'spark',  count:18 },
+ forge:  { kind:'spark',  count:6 },
+ tavern: { kind:'moth',   count:4 },
+ hall:   { kind:'moth',   count:3 }
+};
+function ambient(ctx, game, cam, cw, ch, t){
+ const spec = AMBIENT[game.zone];
+ if(!spec) return;
+ const kind = (game.isNight() && spec.night) ? spec.night : spec.kind;
+ const n = spec.count;
+ for(let i=0;i<n;i++){
+  const seed = i*137.51;
+  let x, y;
+  if(kind === 'drip' || kind === 'spark'){
+   x = cam.x + ((seed*7.3) % cw);
+   const fall = ((t*(kind==='drip'?90:34) + seed*11) % (ch+40));
+   y = cam.y + (kind === 'spark' ? ch - fall : fall) - 20;
+  } else {
+   const sp = kind === 'bird' ? 46 : kind === 'leaf' ? 26 : 16;
+   x = cam.x + ((seed*9.7 + t*sp) % (cw+80)) - 40;
+   y = cam.y + ((seed*5.1) % (ch-60)) + 30 + Math.sin(t*(kind==='moth'?3.4:1.3) + seed)*(kind==='leaf'?18:9);
+  }
+  switch(kind){
+   case 'bird': {
+    const flap = Math.sin(t*9 + seed) > 0 ? 1 : -1;
+    ctx.strokeStyle = 'rgba(28,26,34,.55)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(x-4, y+flap*2); ctx.lineTo(x, y-flap); ctx.lineTo(x+4, y+flap*2); ctx.stroke();
+    break; }
+   case 'leaf':
+    ctx.fillStyle = `rgba(${110+((i*37)%50)},${120+((i*23)%40)},70,.5)`;
+    ctx.save(); ctx.translate(x,y); ctx.rotate(t*2+seed); ctx.fillRect(-2,-1,4,2); ctx.restore();
+    break;
+   case 'firefly': {
+    const a = .25 + Math.sin(t*2.6 + seed)*.35;
+    if(a > 0){ ctx.fillStyle = `rgba(214,231,140,${a})`; ctx.fillRect(x,y,2,2);
+     ctx.fillStyle = `rgba(214,231,140,${a*.18})`; ctx.fillRect(x-3,y-3,8,8); }
+    break; }
+   case 'moth':
+    ctx.fillStyle = 'rgba(228,216,186,.4)';
+    ctx.fillRect(x + Math.sin(t*7+seed)*4, y + Math.cos(t*6+seed)*4, 2, 2);
+    break;
+   case 'drip':
+    ctx.fillStyle = 'rgba(150,178,196,.45)'; ctx.fillRect(x, y, 1, 5);
+    break;
+   case 'spark': {
+    const a = .5 - ((t*34 + seed*11) % (ch+40))/(ch+40)*.45;
+    ctx.fillStyle = `rgba(255,${150+((i*17)%60)},80,${Math.max(0,a)})`;
+    ctx.fillRect(x + Math.sin(t*3+seed)*5, y, 2, 2);
+    break; }
+  }
+ }
+}
+
+// =========================================================================
 // Scene
 // =========================================================================
 let lightCanvas = null, lctx = null;
@@ -1097,8 +1177,8 @@ function ensureLight(w,h){
  return lctx;
 }
 const DARK = {
- dusk:  { color:'#0a1024', night:.58 },
- night: { color:'#070c1c', night:.54 },
+ dusk:  { color:'#080d20', night:.74 },
+ night: { color:'#060a18', night:.78 },
  cave:  { color:'#080a14', night:.46 },
  ember: { color:'#180608', night:.32 },
  warm:  { color:'#120c08', night:.18 }
@@ -1191,6 +1271,8 @@ export function renderScene(ctx, game, cam, cw, ch, t, opts = {}){
  for(const a of game.particles){ ctx.globalAlpha = Math.min(1, a.life*2); ctx.fillStyle = a.color; ctx.fillRect(a.x, a.y, a.size, a.size); }
  ctx.globalAlpha = 1;
 
+ ambient(ctx, game, cam, cw, ch, t);
+
  // Drifting motes, tinted to the zone.
  const mote = def.light === 'cave' ? '134,160,190' : def.light === 'ember' ? '255,150,90' : '179,191,134';
  for(let i=0;i<25;i++){
@@ -1219,21 +1301,22 @@ export function renderScene(ctx, game, cam, cw, ch, t, opts = {}){
    g.addColorStop(.72,`rgba(0,0,0,${strength*.4})`); g.addColorStop(1,'rgba(0,0,0,0)');
    l.fillStyle = g; l.fillRect(gx-r, gy-r, r*2, r*2);
   };
-  punch(p.x, p.y-16, 230, .95);
+  punch(p.x, p.y-16, def.light === 'cave' || def.light === 'ember' ? 230 : 165, .9);
   for(const o of vis){
-   if(o.type === 'lamp' && o.lit !== false) punch(o.x, o.y-40, 150, .95);
-   else if(o.type === 'beacon' && game.flags['beacon'+o.index]) punch(o.x, o.y-60, 240, 1);
-   else if(o.type === 'hearth' && game.flags.hearth) punch(o.x, o.y-18, 220, 1);
-   else if(o.type === 'portal' && !o.door) punch(o.x, o.y-40, 120, .8);
-   else if(o.type === 'prop' && (o.art === 'campfire' || o.art === 'brazier' || o.art === 'forgefire')) punch(o.x, o.y-20, o.art==='forgefire'?210:160, 1);
-   else if(o.type === 'prop' && (o.art === 'shrine' || o.art === 'cauldron')) punch(o.x, o.y-40, 120, .8);
-   else if(o.type === 'crystal') punch(o.x, o.y-20, 110, .8);
-   else if(o.type === 'cinder') punch(o.x, o.y-20, 100, .8);
+   if(o.type === 'lamp' && o.lit !== false) punch(o.x, o.y-40, 118, .92);
+   else if(o.type === 'beacon' && game.flags['beacon'+o.index]) punch(o.x, o.y-60, 200, 1);
+   else if(o.type === 'hearth' && game.flags.hearth) punch(o.x, o.y-18, 190, 1);
+   else if(o.type === 'portal' && !o.door && !o.sealed) punch(o.x, o.y-40, 92, .75);
+   else if(o.type === 'prop' && (o.art === 'campfire' || o.art === 'brazier' || o.art === 'forgefire')) punch(o.x, o.y-20, o.art==='forgefire'?180:128, 1);
+   else if(o.type === 'prop' && (o.art === 'shrine' || o.art === 'cauldron')) punch(o.x, o.y-40, 95, .7);
+   else if(o.type === 'crystal') punch(o.x, o.y-20, 88, .7);
+   else if(o.type === 'cinder') punch(o.x, o.y-20, 80, .7);
   }
-  if(game.zone === 'town') for(const b of TOWN_BUILDINGS) punch((b.door[0])*TILE, (b.door[1])*TILE-10, 110, .7);
-  for(const b of game.projectiles) punch(b.x, b.y-18, 70, .8);
+  // Lit windows spill a little onto the street, but they do not light it.
+  if(game.zone === 'town' && night) for(const b of TOWN_BUILDINGS) punch((b.door[0])*TILE, (b.door[1])*TILE-8, 58, .45);
+  for(const b of game.projectiles) punch(b.x, b.y-18, 62, .7);
   for(const s of game.shocks) punch(s.x, s.y, s.r*1.2, .7);
-  if(p.attack > 0) punch(p.x + Math.cos(p.attackAngle)*40, p.y-16 + Math.sin(p.attackAngle)*40, 130, .8);
+  if(p.attack > 0) punch(p.x + Math.cos(p.attackAngle)*40, p.y-16 + Math.sin(p.attackAngle)*40, 105, .75);
   l.globalCompositeOperation = 'source-over';
   ctx.drawImage(lightCanvas, 0, 0);
  }

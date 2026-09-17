@@ -73,7 +73,7 @@ function events(){
    case 'board': UI.board(); break;
    case 'victory': save(); chapterOne(); A.tone(440,1); A.tone(587.33,1.3,'sine',.03,.17); break;
    case 'moonfen-complete': save(); chapterTwo(); break;
-   case 'hurt': shake = 3.4; A.sweep(160,70,.18,'sawtooth',.03); A.noise(.1,.03,600); break;
+   case 'hurt': shake = 3.4; hurtFlash(e.amount); A.sweep(160,70,.18,'sawtooth',.03); A.noise(.1,.03,600); break;
    case 'shielded': A.tone(520,.2,'triangle',.03); break;
    case 'attack': A.swingSound(game.weapon().kind, e.combo, e.heavy); break;
    case 'impact': {
@@ -84,9 +84,13 @@ function events(){
      angle:p.attackAngle, color:game.weapon().trail, heavy:e.heavy, r:(game.currentSwing().range||80)*.6, life:.26 });
     A.impactSound(e.heavy, e.combo, e.killed);
     break; }
+   case 'slain':
+    R.addFx('death', { x:e.x, y:e.y, type:e.type, spin:(e.x % 2 ? 1 : -1), life:e.boss ? .8 : .42 });
+    if(e.boss) R.addFx('ring', { x:e.x, y:e.y, r:260, color:'#ffd18a', life:.9 });
+    break;
    case 'stagger': A.tone(150,.3,'square',.028); break;
    case 'burst': shake = Math.max(shake, 3); A.noise(.22,.05,700); break;
-   case 'scorched': shake = Math.max(shake, 2); A.noise(.12,.03,900); break;
+   case 'scorched': shake = Math.max(shake, 2); hurtFlash(6); A.noise(.12,.03,900); break;
    case 'shockwave': shake = Math.max(shake, 4); A.sweep(120,40,.4,'sine',.035); break;
    case 'arc': R.addFx('arc', { x1:e.x1, y1:e.y1, x2:e.x2, y2:e.y2, life:.22 }); A.tone(880,.08,'square',.02); break;
    case 'meteor': shake = Math.max(shake, 5); A.sweep(200,50,.5,'sawtooth',.04); break;
@@ -132,6 +136,18 @@ function events(){
    case 'world-changed': break;
   }
  }
+}
+// A red bloom on impact, and a steady pulse while you are nearly dead.
+let hurtTimer = 0;
+function hurtFlash(amount = 10){
+ const el = $('#hurt-flash');
+ el.classList.add('hit');
+ clearTimeout(hurtTimer);
+ hurtTimer = setTimeout(() => el.classList.remove('hit'), Math.min(220, 70 + amount*4));
+}
+function lowHealth(){
+ const p = game.player;
+ $('#hurt-flash').classList.toggle('low', started && p.hp > 0 && p.hp/p.maxHp < .25);
 }
 function arriveZone(e){
  R.clearFx();
@@ -332,7 +348,7 @@ function loop(now){
  prompt(cw, ch);
 
  hudTimer += dt;
- if(hudTimer > .12){ UI.updateHud(); hudTimer = 0; }
+ if(hudTimer > .12){ UI.updateHud(); lowHealth(); hudTimer = 0; }
  requestAnimationFrame(loop);
 }
 function prompt(cw, ch){

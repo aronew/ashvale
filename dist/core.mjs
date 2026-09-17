@@ -324,6 +324,7 @@ export class Game {
   if(!d.boss && p.kills % 3 === 0) this.gain('herb', 1, e.x, e.y);
   if(p.superT <= 0) p.focus = Math.min(100, p.focus + (d.boss?40:6));
   if(e.once || d.boss) e.deadUntil = Infinity; else e.deadUntil = this.time + RESPAWN_MOB;
+  this.event('slain',{ type:e.type, x:e.x, y:e.y, boss:!!d.boss });
   this.questKill(e.type);
   if(this.bounty && this.bounty.enemy === e.type){ this.bounty.killed++; if(this.bounty.killed >= this.bounty.count) this.toast('Bounty complete · report to the Wayfarers’ Hall.'); }
 

@@ -62,3 +62,11 @@
 .journal-entry.locked{opacity:.55}
 .portrait-sprite{width:72px;height:72px;flex-shrink:0}
 @media(max-width:650px){.gear-list{grid-template-columns:1fr}}
+
+/* --- damage feedback --------------------------------------------------- */
+#hurt-flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .28s ease-out;
+ background:radial-gradient(ellipse at center,rgba(150,20,40,0) 38%,rgba(150,20,40,.42) 78%,rgba(110,10,28,.72) 100%)}
+#hurt-flash.hit{opacity:1;transition:opacity .05s linear}
+#hurt-flash.low{opacity:.42;animation:lowpulse 1.6s ease-in-out infinite}
+@keyframes lowpulse{0%,100%{opacity:.26}50%{opacity:.5}}
+@media(prefers-reduced-motion:reduce){#hurt-flash.low{animation:none;opacity:.3}}

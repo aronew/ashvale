@@ -30,7 +30,11 @@ visibly recolour the character. Three benches, three shops, an ember-mark econom
 
 **Presentation.** Per-zone terrain baking with seam dithering and cliff faces, top-down
 pitched-roof buildings, twenty-five procedural props, a day/night cycle with real
-lighting, per-region music, and weapon-class combat sound.
+lighting, per-region music, and weapon-class combat sound. Ambient life per region —
+birds, drifting leaves, fireflies and moths after dark, cave drips, rising embers — plus
+NPCs who sway, turn toward you and light up when you come close enough to talk. Enemies
+fold in on themselves when killed instead of blinking out, and taking damage blooms red
+at the edges of the screen, which pulses steadily once you are nearly dead.
 
 **Gating.** The deep stair stays sealed until the Warren Devourer drops its sigil, so the last dungeon cannot be wandered into at level five.
 
