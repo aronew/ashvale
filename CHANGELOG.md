@@ -26,6 +26,8 @@ rather than derived from hit reach, which is what made the old swing read as a s
 Lys's loom that change armour, speed, spell power, critical chance and forging cost, and
 visibly recolour the character. Three benches, three shops, an ember-mark economy.
 
+**Performance.** Colour treatments are baked into cached sprite canvases instead of being applied with `ctx.filter` per draw. That one change took the larger regions from 17–23fps to a locked 60, and it holds at 60 with thirty enemies and a boss on screen.
+
 **Presentation.** Per-zone terrain baking with seam dithering and cliff faces, top-down
 pitched-roof buildings, twenty-five procedural props, a day/night cycle with real
 lighting, per-region music, and weapon-class combat sound.
