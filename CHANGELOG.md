@@ -2,7 +2,24 @@
 
 ## Combat readability and finding your way
 
-- **The melee animation was wrong at the root.** Blade length was derived from
+- **The melee animation is choreographed rather than rotated.** A swing was a
+  rigid stick turning about a point while the character stood still, and the
+  sweep was front-loaded so hard the blade effectively teleported and then hung
+  for the rest of the swing. Every swing now runs anticipation, a step into the
+  strike, a fast sweep that overshoots, and a recovery back onto guard, with the
+  body carrying most of it: rotation, forward drive, vertical lift and squash.
+  Something is moving on every frame.
+- A rising cut lifts and stretches the body, a falling cut does not, and the
+  finisher is a full overhead — blade raised back over the shoulder and clear of
+  the head, then driven down with a landing and a puff of dust. The three hits
+  of a string no longer read as one motion mirrored.
+- The weapon is visibly held: a forearm and fist are drawn onto the grip,
+  tinted to the outfit.
+- Motion ghosts of the blade during the fast part, and a single bright frame as
+  it passes through the hit.
+- Depth follows which way the character faces rather than where the blade points
+  on screen, so an overhead stays visible instead of vanishing behind the body.
+- **The melee proportions were wrong at the root.** Blade length was derived from
   the attack's hit reach, which is deliberately generous, so the sword drew
   longer than the character is tall and read as a scythe. Measured against the
   hero sprite (25px wide, 48px tall as drawn) and rebuilt: the sword is now 22px

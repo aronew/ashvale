@@ -88,6 +88,9 @@ function events(){
     R.addFx('slash', { x:p.x + Math.cos(p.attackAngle)*22, y:p.y-26 + Math.sin(p.attackAngle)*22,
      angle:p.attackAngle, color:game.weapon().trail, heavy:e.heavy,
      r:(R.BLADE_LEN[game.weapon().kind] ?? 22) + 14, life:.24 });
+    if(e.style === 'cleave' || e.style === 'slam')
+     R.addFx('dust', { x:p.x + Math.cos(p.attackAngle)*30, y:p.y + Math.sin(p.attackAngle)*14,
+      r:e.heavy ? 54 : 38, seed:p.x, life:.4 });
     A.impactSound(e.heavy, e.combo, e.killed);
     break; }
    case 'slain':
