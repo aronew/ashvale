@@ -370,24 +370,30 @@ export function bladePose(swing, phase, impactPhase){
 // between a sword that "swings weird" and one that reads as a real arc.
 // Hit reach and blade length are deliberately different numbers — the hitbox
 // is generous, the weapon stays the size a person could actually hold.
-export const BLADE_LEN = { sword:34, dagger:22, great:48, spear:54, saber:38, maul:38, glaive:50 };
-export const BLADE_WIDTH = { sword:4.5, dagger:3, great:7.5, spear:3.2, saber:4, maul:9, glaive:5 };
-const HAND = 12;
+// The hero's opaque body measures about 25px wide by 48px tall as drawn.
+// A weapon reads right at roughly half that height from the hand; anything
+// longer stops looking like a sword and starts looking like a scythe.
+export const BLADE_LEN   = { sword:22, dagger:13, great:31, spear:40, saber:25, maul:23, glaive:34 };
+export const BLADE_WIDTH = { sword:2.8, dagger:2, great:4.8, spear:2.2, saber:2.6, maul:3.2, glaive:3 };
+const HAND = 9;             // how far the grip sits from the body's centre
 
 function tipAt(swing, phase, impactPhase, blade){
  const pose = bladePose(swing, phase, impactPhase);
  return { pose, r: HAND + blade*pose.reach };
 }
 function ribbon(ctx, swing, phase, impactPhase, blade, color, alpha){
- const samples = 14, span = .40;
+ const samples = 12, span = .30;
  const outer = [], inner = [];
  for(let i=0;i<=samples;i++){
   const t = phase - span*(1 - i/samples);
   if(t < impactPhase) continue;
   const { pose, r } = tipAt(swing, Math.min(t, phase), impactPhase, blade);
-  outer.push([Math.cos(pose.angle)*r, Math.sin(pose.angle)*r]);
-  const ir = HAND + blade*.22;
-  inner.push([Math.cos(pose.angle)*ir, Math.sin(pose.angle)*ir]);
+  const c = Math.cos(pose.angle), sn = Math.sin(pose.angle);
+  outer.push([c*r, sn*r]);
+  // The streak is a slim crescent hugging the tip, thinnest at the tail, so
+  // it reads as speed rather than as a fan sticking out of the hand.
+  const taper = .90 - .30*(i/samples);
+  inner.push([c*r*taper, sn*r*taper]);
  }
  if(outer.length < 3) return;
  ctx.beginPath();
@@ -398,24 +404,41 @@ function ribbon(ctx, swing, phase, impactPhase, blade, color, alpha){
  const tip = outer[outer.length-1];
  const g = ctx.createLinearGradient(outer[0][0], outer[0][1], tip[0], tip[1]);
  g.addColorStop(0, color+'00');
- g.addColorStop(.5, color+'4d');
- g.addColorStop(1, color+'b3');
+ g.addColorStop(.6, color+'3a');
+ g.addColorStop(1, color+'99');
  ctx.globalAlpha = alpha; ctx.fillStyle = g; ctx.fill();
- ctx.beginPath(); ctx.moveTo(outer[0][0], outer[0][1]);
- for(let i=1;i<outer.length;i++) ctx.lineTo(outer[i][0], outer[i][1]);
- ctx.strokeStyle = '#fff8e2'; ctx.lineWidth = 1.6; ctx.globalAlpha = alpha*.75; ctx.stroke();
+ // A thin bright edge over the leading part of the sweep only.
+ const lead = outer.slice(Math.max(0, outer.length-5));
+ if(lead.length > 1){
+  ctx.beginPath(); ctx.moveTo(lead[0][0], lead[0][1]);
+  for(let i=1;i<lead.length;i++) ctx.lineTo(lead[i][0], lead[i][1]);
+  ctx.strokeStyle = '#fff3d6'; ctx.lineWidth = 1.1; ctx.globalAlpha = alpha*.55; ctx.stroke();
+ }
  ctx.globalAlpha = 1;
 }
 
+export function swingImpactPhase(game, p){
+ const swing = game.currentSwing(), w = game.weapon();
+ return clamp((swing.impact/(w.speed??1)) / Math.max(.0001, p.attackDuration), 0, .95);
+}
+// True while the blade is raised or swept away from the camera, which is when
+// it belongs behind the body rather than slabbed across the character's face.
+export function swingIsBehind(game, p, phase){
+ const pose = bladePose(game.currentSwing(), phase, swingImpactPhase(game, p));
+ return Math.sin(p.attackAngle + pose.angle) < -.2;
+}
 export function drawSwing(ctx, game, p, phase){
  const swing = game.currentSwing(), w = game.weapon();
- const impactPhase = clamp((swing.impact/(w.speed??1)) / Math.max(.0001, p.attackDuration), 0, .95);
+ const impactPhase = swingImpactPhase(game, p);
  const pose = bladePose(swing, phase, impactPhase);
  const blade = BLADE_LEN[w.kind] ?? 34, halfW = BLADE_WIDTH[w.kind] ?? 4.5;
  const color = w.trail, heavy = p.heavy;
 
  ctx.save();
- ctx.translate(p.x, p.y - 20);
+ // Swinging away from the camera the blade passes behind the body, so raise
+ // the pivot toward the shoulders and the arc clears the silhouette.
+ const pivotY = p.y - 26 - Math.max(0, -Math.sin(p.attackAngle)) * 13;
+ ctx.translate(p.x, pivotY);
  ctx.rotate(p.attackAngle);
  ctx.scale(1, .84);                       // the world is seen at a slight tilt
 
@@ -423,10 +446,10 @@ export function drawSwing(ctx, game, p, phase){
   const fade = 1 - Math.pow(pose.t, 1.7);
   if(heavy){
    ctx.globalCompositeOperation = 'lighter';
-   ribbon(ctx, swing, phase, impactPhase, blade*1.12, color, fade*.45);
+   ribbon(ctx, swing, phase, impactPhase, blade*1.1, color, fade*.35);
    ctx.globalCompositeOperation = 'source-over';
   }
-  ribbon(ctx, swing, phase, impactPhase, blade, color, fade*.95);
+  ribbon(ctx, swing, phase, impactPhase, blade, color, fade*.8);
   if(swing.style === 'spin' || swing.style === 'reaver'){
    ctx.globalAlpha = fade*.3; ctx.strokeStyle = color; ctx.lineWidth = 2.5;
    ctx.beginPath(); ctx.arc(0, 0, HAND + blade*.8, pose.angle-2.6, pose.angle); ctx.stroke();
@@ -437,21 +460,20 @@ export function drawSwing(ctx, game, p, phase){
  // The weapon itself: pommel, grip, guard and blade, along the current pose.
  const r = HAND + blade*pose.reach;
  ctx.rotate(pose.angle);
- ctx.globalAlpha = pose.wind ? .8 : Math.min(1, (1-pose.t)*2.6 + .3);
- ctx.fillStyle = '#c8a066'; ctx.fillRect(HAND-13, -3, 3, 6);            // pommel
- ctx.fillStyle = '#6a4a33'; ctx.fillRect(HAND-10, -2.2, 10, 4.4);       // grip
- ctx.fillStyle = '#e2bd7c'; ctx.fillRect(HAND, -halfW-2.5, 3.5, halfW*2+5); // cross guard
+ ctx.globalAlpha = pose.wind ? .55 : Math.min(1, (1-pose.t)*2.6 + .35);
+ ctx.fillStyle = '#c8a066'; ctx.fillRect(HAND-9, -2.2, 2.4, 4.4);        // pommel
+ ctx.fillStyle = '#6a4a33'; ctx.fillRect(HAND-7, -1.7, 7, 3.4);          // grip
+ ctx.fillStyle = '#e2bd7c'; ctx.fillRect(HAND, -halfW-1.8, 2.6, halfW*2+3.6); // cross guard
+ const tipStart = swing.style === 'thrust' || swing.style === 'stab' ? r-5 : r-blade*.40;
  ctx.beginPath();
- if(swing.style === 'thrust' || swing.style === 'stab'){
-  ctx.moveTo(HAND+3, -halfW*.7); ctx.lineTo(r-5, -halfW*.55); ctx.lineTo(r, 0);
-  ctx.lineTo(r-5, halfW*.55); ctx.lineTo(HAND+3, halfW*.7);
- } else {
-  ctx.moveTo(HAND+3, -halfW); ctx.lineTo(r-blade*.16, -halfW*.7); ctx.lineTo(r, 0);
-  ctx.lineTo(r-blade*.16, halfW*.75); ctx.lineTo(HAND+3, halfW);
- }
+ ctx.moveTo(HAND+2.4, -halfW);
+ ctx.lineTo(tipStart, -halfW*.66);
+ ctx.lineTo(r, 0);
+ ctx.lineTo(tipStart, halfW*.66);
+ ctx.lineTo(HAND+2.4, halfW);
  ctx.closePath(); ctx.fillStyle = w.blade ?? '#ddd0b0'; ctx.fill();
- ctx.strokeStyle = '#fff6dc'; ctx.lineWidth = 1;
- ctx.beginPath(); ctx.moveTo(HAND+4, -.5); ctx.lineTo(r-3, -.5); ctx.stroke();
+ ctx.fillStyle = '#00000033'; ctx.fillRect(HAND+2.4, halfW*.2, tipStart-HAND-2.4, halfW*.8);  // shaded lower edge
+ ctx.fillStyle = '#fff6dc99'; ctx.fillRect(HAND+3.2, -halfW*.45, tipStart-HAND-4, .9);        // fuller highlight
  ctx.globalAlpha = 1;
  ctx.restore();
 }
@@ -461,13 +483,17 @@ export function drawIdleWeapon(ctx, game, p, bob){
  const w = game.weapon();
  const left = p.dir === 2;
  ctx.save();
- ctx.translate(p.x + (left?-15:15), p.y - 22 + bob);
- ctx.rotate(left ? -.55 : .55);
- ctx.fillStyle = '#6a4a33'; ctx.fillRect(-4,-2,10,4);
- ctx.fillStyle = '#e2bd7c'; ctx.fillRect(5,-4,3,8);
- const len = (BLADE_LEN[w.kind] ?? 34)*.8;
- ctx.beginPath(); ctx.moveTo(8,-3); ctx.lineTo(8+len,0); ctx.lineTo(8,3); ctx.closePath();
+ ctx.translate(p.x + (left?-11:11), p.y - 20 + bob);
+ ctx.rotate(left ? -2.35 : 2.35);            // carried point-down, at rest
+ ctx.scale(1, .86);
+ const len = BLADE_LEN[w.kind] ?? 22, halfW = (BLADE_WIDTH[w.kind] ?? 3.2) * .9;
+ ctx.fillStyle = '#6a4a33'; ctx.fillRect(-6,-1.5,6,3);
+ ctx.fillStyle = '#e2bd7c'; ctx.fillRect(0,-halfW-1.5,2.2,halfW*2+3);
+ ctx.beginPath();
+ ctx.moveTo(2.2,-halfW); ctx.lineTo(len-4,-halfW*.8); ctx.lineTo(len,0);
+ ctx.lineTo(len-4,halfW*.8); ctx.lineTo(2.2,halfW); ctx.closePath();
  ctx.fillStyle = w.blade ?? '#ddd0b0'; ctx.fill();
+ ctx.fillStyle = '#00000038'; ctx.fillRect(2.2, halfW*.2, len-6, halfW*.8);
  ctx.restore();
 }
 
@@ -877,7 +903,7 @@ function drawFx(ctx, t){
    ctx.translate(f.x, f.y); ctx.rotate(f.angle); ctx.scale(1,.8);
    ctx.globalCompositeOperation = 'lighter';
    ctx.globalAlpha = (1-p)*.9;
-   ctx.strokeStyle = f.color ?? '#fff3d0'; ctx.lineWidth = (f.heavy?9:6)*(1-p);
+   ctx.strokeStyle = f.color ?? '#fff3d0'; ctx.lineWidth = (f.heavy?6:4)*(1-p);
    ctx.beginPath(); ctx.arc(0,0, (f.r??54)*(.7+p*.5), -1.1, 1.1); ctx.stroke();
    ctx.globalAlpha = (1-p)*.55; ctx.lineWidth = 2;
    ctx.beginPath(); ctx.arc(0,0, (f.r??54)*(.55+p*.75), -.8, .8); ctx.stroke();
@@ -1340,8 +1366,8 @@ function drawPlayer(ctx, game, p, t, opts){
  const swinging = p.attack > 0;
  const phase = swinging ? 1 - p.attack/p.attackDuration : 0;
  const swing = swinging ? game.currentSwing() : null;
- const drive = swinging ? Math.sin(phase*Math.PI) * (p.heavy ? 15 : swing.style === 'thrust' ? 12 : 8) : 0;
- const lean = swinging ? Math.sin(phase*Math.PI) * (swing.arc[1] > swing.arc[0] ? -.16 : .16) : 0;
+ const drive = swinging ? Math.sin(phase*Math.PI) * (p.heavy ? 8 : swing.style === 'thrust' ? 7 : 4) : 0;
+ const lean = swinging ? Math.sin(phase*Math.PI) * (swing.arc[1] > swing.arc[0] ? -.1 : .1) : 0;
  shadow(ctx, p.x, p.y, 14, 5);
  if(p.superT > 0) glow(ctx, p.x, p.y-22, 130, (game.weapon().trail ?? '#ffd88a')+'44');
  if(p.shield > 0){
@@ -1349,6 +1375,9 @@ function drawPlayer(ctx, game, p, t, opts){
   ctx.beginPath(); ctx.ellipse(p.x, p.y-22, 26, 32, 0, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
  }
  if(!swinging) drawIdleWeapon(ctx, game, p, bob);
+ // A raised or away-swung blade passes behind the body.
+ const behind = swinging && swingIsBehind(game, p, phase);
+ if(behind) drawSwing(ctx, game, p, phase);
  drawSprite(ctx, p.dir, p.x + Math.cos(p.attackAngle)*drive, p.y + bob + Math.sin(p.attackAngle)*drive, 57, 65, {
   sprite: set[p.dir],
   alpha: p.invincible > 0 && Math.floor(t*12)%2 === 0 ? .45 : 1,
@@ -1356,7 +1385,7 @@ function drawPlayer(ctx, game, p, t, opts){
   squash: p.dash > 0 ? .14 : 0,
   filter: p.perfect > 0 ? 'brightness(1.3) saturate(1.2)' : undefined
  });
- if(swinging) drawSwing(ctx, game, p, phase);
+ if(swinging && !behind) drawSwing(ctx, game, p, phase);
  if(p.dash > 0){
   ctx.strokeStyle = '#a5ded970'; ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(p.x, p.y-20); ctx.lineTo(p.x-Math.cos(p.angle)*45, p.y-20-Math.sin(p.angle)*45); ctx.stroke();

@@ -395,18 +395,31 @@ export function board(){
 // =========================================================================
 export function mapPanel(){
  const g = G();
- openPanel(ZONES[g.zone].name, 'MAP · ' + ZONES[g.zone].sub, `
+ const roads = g.roadsOut();
+ // Naming every road out of the region you are standing in, with its tile
+ // coordinates, so a waystone can never be sitting somewhere you never look.
+ const roadList = roads.length ? `<h3>Roads from here</h3><div class="road-list">${roads.map(r => `
+   <div class="road ${r.sealed ? 'sealed' : ''}">
+    <b>${r.door ? '\u25a2' : '\u25c8'} ${r.label}</b>
+    <span>to <em>${r.name}</em>${r.sealed ? ' \u00b7 sealed' : r.visited ? '' : ' \u00b7 not yet visited'}</span>
+    <i>${r.sub ?? ''}</i>
+    <small>on the map at ${r.tx}, ${r.ty}</small>
+   </div>`).join('')}</div>`
+  : '<h3>Roads from here</h3><p class="muted">No way onward from this room but the door you came in by.</p>';
+ openPanel(ZONES[g.zone].name, 'MAP \u00b7 ' + ZONES[g.zone].sub, `
   <canvas id="big-map" width="560" height="${Math.round(560*ZONES[g.zone].h/ZONES[g.zone].w)}" aria-label="Map of ${ZONES[g.zone].name}"></canvas>
   <div class="map-legend"><span><i style="background:#f8eace"></i>You</span><span><i style="background:#8fd6c0"></i>Roads out</span>
    <span><i style="background:#e9c880"></i>Work offered</span><span><i style="background:#8fd6a8"></i>Ready to hand in</span><span><i style="background:#d77486"></i>Something large</span></div>
-  <h3>Where everything is</h3>
+  ${roadList}
+  <h3>The world, and how it joins up</h3>
   <div class="help-grid">${[
-   ['Ashvale Hollow','Where you started. Wren, the hearth, the garden, the Moonfen beacons east.'],
-   ['Hearthgate','West of the hollow. The forge, the loom, the market, the Hall, the crypt under the chapel.'],
-   ['Whisperwood Deep','North from the hollow or through Hearthgate’s postern. Wolves, silkbacks, the Warden’s grove.'],
-   ['The Sunken Warrens','Through the cave mouth in the north-east of the wood. Iron, coal, crystal, and worse.'],
-   ['The Emberdeep','Down the deep stair at the top of the Warrens. Do not go under-equipped.']
-  ].map(([n,d]) => `<span><b>${n}</b><br>${d}</span>`).join('')}</div>`);
+   ['Ashvale Hollow', 'vale', 'Where you started. Wren, the hearth, the garden. The Moonfen and its beacons lie east past the bridge; the Rootvault is the stone country north-east.'],
+   ['Hearthgate', 'town', 'Take the <b>west road</b> out of the hollow \u2014 the lit waystone on the path at the far west edge. The forge, the loom, the market, the Hall, and the crypt under the chapel.'],
+   ['Whisperwood Deep', 'forest', 'The <b>Whisperwood trail</b> north of the hollow, or Hearthgate\u2019s north postern. Wolves, silkbacks, and the Warden\u2019s grove.'],
+   ['The Ashen Crypt', 'crypt', 'The crypt stair beside Hearthgate\u2019s chapel.'],
+   ['The Sunken Warrens', 'warren', 'The cave mouth in the north-east of Whisperwood. Iron, coal, crystal, and worse.'],
+   ['The Emberdeep', 'deep', 'The deep stair at the top of the Warrens. Sealed until the Devourer gives up its sigil.']
+  ].map(([n,id,d]) => `<span class="${g.visited[id] ? 'been' : ''}"><b>${n}</b>${g.visited[id] ? ' \u2713' : ''}<br>${d}</span>`).join('')}</div>`);
  drawMap(g, $('#big-map'), true, ZONE_LABELS[g.zone] ?? []);
 }
 export function help(){
