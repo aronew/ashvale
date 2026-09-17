@@ -1,6 +1,6 @@
 // Browser layer: input, camera, the frame loop, and turning model events into
 // sound, panels and effects. All rules live in core.mjs.
-import { Game, TILE, clamp, distance, ZONES, ENEMIES, SPELLS, SPELL_ORDER, WEAPONS } from './core.mjs';
+import { Game, TILE, clamp, ZONES, SPELLS, SPELL_ORDER, WEAPONS } from './core.mjs';
 import * as R from './render.mjs';
 import * as UI from './ui.mjs';
 import * as A from './audio.mjs';
@@ -85,6 +85,8 @@ function events(){
     A.impactSound(e.heavy, e.combo, e.killed);
     break; }
    case 'stagger': A.tone(150,.3,'square',.028); break;
+   case 'burst': shake = Math.max(shake, 3); A.noise(.22,.05,700); break;
+   case 'scorched': shake = Math.max(shake, 2); A.noise(.12,.03,900); break;
    case 'shockwave': shake = Math.max(shake, 4); A.sweep(120,40,.4,'sine',.035); break;
    case 'arc': R.addFx('arc', { x1:e.x1, y1:e.y1, x2:e.x2, y2:e.y2, life:.22 }); A.tone(880,.08,'square',.02); break;
    case 'meteor': shake = Math.max(shake, 5); A.sweep(200,50,.5,'sawtooth',.04); break;

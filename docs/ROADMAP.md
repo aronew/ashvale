@@ -2,33 +2,43 @@
 
 ## Implemented baseline
 
-The imported game matches the hosted Chapter II release: two connected quest arcs, village restoration, gathering/farming/crafting, three-hit Z combos, Rootbound guardian, Moonfen cinder wisps and beacons, local saves, keyboard/mouse/touch input, and optional sound.
+Six chapters across nine regions: Ashvale Hollow and the Moonfen (the original Chapters I and II, unchanged in feel), Hearthgate, Whisperwood Deep, the Ashen Crypt, the Sunken Warrens, the Emberdeep, and three town interiors. Twenty-two NPCs, twenty quests, six repeatable bounties, three shops, three workbenches, ten weapons across seven combo classes, eight outfits, six spells, weapon-class focus attacks, eighteen enemy archetypes and five bosses. Day/night with real lighting, resource and enemy respawn, an ember-mark economy, and a version 2 save that still loads version 1.
 
-The original user direction is an Emberville-inspired dark top-down pixel-art adventure with original assets, characters, maps, and progression. The user explicitly chose Z for attack/gather and requested varied, visually satisfying sword swings. Preserve those choices unless asked otherwise.
+The original user direction is an Emberville-inspired dark top-down pixel-art adventure with original assets, characters, maps, and progression. The user explicitly chose Z for attack/gather and asked for varied, visually satisfying sword swings; X was added for the heavy strike. Preserve those choices unless asked otherwise.
 
-## Suggested next work (not yet implemented)
+## Verified
 
-1. **Browser playtest and combat polish.** Validate the existing motion at desktop/mobile sizes. Improve directional character animation with dedicated run/attack frames, and test whether aim assist should yield to mouse input.
-2. **Content definitions.** Extract quest, item, region, and enemy definitions from long conditionals. Preserve IDs and save semantics during refactoring.
-3. **Enterable village interiors.** Add a workshop and inn interior with clear entrance/exit transitions and save-safe spawn points. Avoid trapping old saves at door locations.
-4. **A third quest arc.** Add a distinct biome, meaningful NPC objective, and new enemy behavior. Use explicit stable IDs and a resource/progression balance plan.
-5. **Replayable encounters.** Add deliberate respawn or dungeon-reset rules so the world has activity after completion. Keep unique rewards one-time and make resets clear to players.
-6. **Save management.** Add validated export/import and recovery before considering account/cloud saves.
-7. **Broader progression.** Equipment choices, more recipes, inventory feedback, and differentiated weapon styles after the current combat loop is playtested.
+- `npm test` runs two suites: regression (combat timing, weapon tables, upgrades, stagger, armour, wards, supers, per-zone traversability, portal pairing, quest coherence, economy, respawn, legacy migration, hostile-save clamping, content sanity) and a full six-chapter playthrough driven entirely through model actions, followed by every side quest and every bench recipe.
+- `npm run check` parses every module, resolves every relative import, and checks required assets and control hints.
+- Automated Chromium QA: boot, play and save-reload with no console errors across all nine regions, every weapon class, every spell, supers, heavy attacks and every panel.
+
+## Not yet verified
+
+- **Hand-played feel.** Nobody has sat down and played this with a keyboard for an hour. Pacing, difficulty curve, and whether the combat actually feels as good as it looks are unmeasured.
+- **Touch.** The touch action cluster is implemented and laid out but has not been used on a real phone.
+- **Long-session performance.** The largest zone bakes a 2688×1984 terrain canvas; three are cached. This has not been profiled on low-end hardware.
+- **Accessibility.** Reduced motion, text scaling, colour contrast on the smallest HUD labels and screen-reader behaviour of the new panels need a focused review.
+
+## Suggested next work
+
+1. **Playtest and rebalance.** Enemy health and damage across the later regions were authored, not tuned. Expect the Warrens and Emberdeep to need adjustment once someone plays them honestly.
+2. **Character animation.** Directional sprites are still transformed in code rather than drawn as frames. Run and attack sheets would raise the whole game more than any other art work.
+3. **More enemy silhouettes.** Several archetypes share an atlas sprite with a tint and a small procedural mark. New atlas cells would separate them properly.
+4. **Pathfinding.** Enemies steer locally and catch on terrain in the town and the crypt's pillared rooms.
+5. **Save management.** Validated export/import and a recovery path, before anything cloud-shaped.
+6. **A seventh region or an endgame loop.** The bounty board is the only repeatable content; a resettable dungeon would give the post-ending save somewhere to go.
+7. **Music.** The synthesized motifs are four bars of arpeggio per region. Real composition would carry a lot.
 
 ## Known limitations / technical debt
 
-- No completed interactive browser or visual animation QA; automated checks are model-level.
-- Static directional character sprites are transformed for attacks, not true multi-frame skeletal/sprite animations. The new ranged enemy reuses the bat artwork with a different treatment and effects.
-- No pathfinding: enemies may get caught on terrain/props.
-- No interiors, multiplayer, cloud saves, procedural dungeon resets, or recurring enemy/resource respawn.
-- World terrain is deterministic and code-defined. Existing generation is coupled to save IDs.
-- Quest text and state selection are duplicated across HUD, journal, and dialogue.
-- Some HUD labels are very small; accessibility, text scaling, reduced-motion handling, and narrow layouts need a focused review.
-- Mouse direction can be overridden by near-enemy aim assist despite the current help text describing free aim.
-- Save validation and failure recovery are basic. A damaged save should not be used as a reason to silently reset player progress.
+- Static directional character sprites, transformed rather than animated.
+- No pathfinding; local steering only.
+- Several enemies reuse an atlas sprite with a colour treatment.
+- No multiplayer, cloud saves, save import/export, or procedural dungeon generation.
+- The vale's terrain and original entity order are frozen for save compatibility, so that region cannot be re-laid out without a migration.
+- Quest text is authored in one place now, but region descriptions still appear in both `ZONES` and the map panel.
 - No automatic GitHub→live deployment pipeline.
 
 ## Planning an expansion
 
-Define the player goal, map access route, new mechanics, resource costs/rewards, stable IDs, save migration needs, asset requirements, and acceptance tests before expanding scope. Finish a coherent playable loop rather than adding disconnected decorative systems.
+Define the player goal, map access route, new mechanics, resource costs/rewards, stable IDs, save migration needs, asset requirements, and acceptance tests before expanding scope. Finish a coherent playable loop rather than adding disconnected decorative systems. The traversability, quest-coherence and playthrough tests will catch a region that cannot be walked, a quest that cannot be finished, and a reward that does not exist — add content and run them early.

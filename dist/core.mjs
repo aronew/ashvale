@@ -1,8 +1,8 @@
 // Ashvale game model. Deterministic, and deliberately free of DOM, canvas,
 // localStorage, timers and network APIs so the whole game can be unit tested.
 import {
- TILE, T, SOLID, HAZARD, ITEMS, ITEM_ORDER, GATHER, WEAPONS, WEAPON_ORDER, OUTFITS, OUTFIT_ORDER,
- SPELLS, SPELL_ORDER, SUPERS, RECIPES, ENEMIES, SWINGS, SWING_SETS, HEAVY,
+ TILE, SOLID, HAZARD, ITEMS, GATHER, WEAPONS, OUTFITS,
+ SPELLS, SUPERS, RECIPES, ENEMIES, SWINGS, SWING_SETS, HEAVY,
  UPGRADE_COST, MAX_UPGRADE, upgradedPower, clamp, distance, random
 } from './data/content.mjs';
 import { ZONES, ZONE_ORDER, PORTALS, MW, MH, makeMap } from './data/world.mjs';
@@ -284,9 +284,11 @@ export class Game {
 
  roll(){ this._r ??= random(99); return this._r(); }
 
+ // A shockwave with no damage is pure spectacle; it must not chip everything
+ // standing nearby for a point.
  shockwave(x,y,radius,damage){
   this.shock(x,y,radius);
-  for(const e of this.here()) if(e.hp>0 && distance(e,{x,y}) < radius) this.hitEnemy(e, damage, { poise:40, knock:22 });
+  if(damage > 0) for(const e of this.here()) if(e.hp>0 && distance(e,{x,y}) < radius) this.hitEnemy(e, damage, { poise:40, knock:22 });
   this.event('shockwave',{ x, y, radius });
  }
  chain(x,y,links,damage){
@@ -336,9 +338,15 @@ export class Game {
    if(e.type === 'tyrant'){ this.flags.ending = true; }
    this.event('boss-defeated',{ name:d.name, type:e.type });
   }
-  if(d.burst) this.shockwave(e.x, e.y, d.burst.radius, 0) , this.hurtIfNear(e, d.burst.radius, d.burst.dmg);
+  // A sporeling bursts when it dies, and the burst is aimed at you, not at
+  // the things standing next to it.
+  if(d.burst){
+   this.shock(e.x, e.y, d.burst.radius, '#b9d7a6');
+   this.particlesAt(e.x, e.y-10, '#b9d7a6', 26, 1.6);
+   this.event('burst',{ x:e.x, y:e.y });
+   if(distance(e, p) < d.burst.radius) this.hurt(d.burst.dmg);
+  }
  }
- hurtIfNear(e,radius,dmg){ if(distance(e,this.player) < radius) this.hurt(dmg); }
 
  hurt(n, source){
   const p = this.player;
@@ -975,12 +983,18 @@ export class Game {
   return true;
  }
 
- // What this person has to say right now.
+ // What this person has to say right now. Chapter I and II close themselves,
+ // so they are never offered or handed in across a counter; the NPC narrates
+ // them in their own words instead.
  npcTopics(npcId){
-  const ready = QUESTS.filter(q => q.giver === npcId && this.questReady(q.id));
-  const offers = QUESTS.filter(q => q.giver === npcId && !q.auto && this.questOpen(q));
-  const active = QUESTS.filter(q => q.giver === npcId && this.questActive(q.id) && !this.questReady(q.id));
-  return { npc:NPCS[npcId], ready, offers, active };
+  const mine = QUESTS.filter(q => q.giver === npcId && !q.auto);
+  return {
+   npc: NPCS[npcId],
+   ready: mine.filter(q => this.questReady(q.id)),
+   offers: mine.filter(q => this.questOpen(q)),
+   active: mine.filter(q => this.questActive(q.id) && !this.questReady(q.id)),
+   chapter: QUESTS.find(q => q.giver === npcId && q.auto && this.questActive(q.id)) ?? null
+  };
  }
  talkTo(npcId){ this.questTalk(npcId); return this.npcTopics(npcId); }
 
@@ -1083,7 +1097,9 @@ export class Game {
    outfits:this.outfits, spells:this.spells, recipes:this.recipes,
    quests:this.quests, bounty:this.bounty, killLog:this.killLog, visited:this.visited,
    removed:[...this.removed],
-   objects:this.objects.filter(o => o.hp !== 3 || o.growing || o.ripe || o.respawnAt || o.lit === true)
+   // Only entries that differ from how they were built, so the save does not
+   // grow with the world.
+   objects:this.objects.filter(o => o.hp !== (GATHER[o.type]?.hp ?? 3) || o.growing || o.ripe || o.respawnAt || o.lit === true)
     .map(o => ({ id:o.id, hp:o.hp, growing:o.growing, ripe:o.ripe, respawnAt:o.respawnAt, lit:o.lit })),
    enemies:this.enemies.filter(e => !e.summoned)
     .map(e => ({ id:e.id, hp:e.hp, dead:e.hp > 0 ? 0 : (e.deadUntil === Infinity ? -1 : e.deadUntil) }))

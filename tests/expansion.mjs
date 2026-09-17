@@ -395,4 +395,36 @@ const ok = m => done.push(m);
  ok('all items, weapons, outfits and spells are defined and obtainable');
 }
 
+{ // Gathering: the sword breaks a node and the material lands in the pack.
+ const g = new Game();
+ const tree = g.props().find(o => o.type === 'tree' && !g.removed.has(o.id));
+ g.player.x = tree.x; g.player.y = tree.y + 40;
+ g.player.angle = -Math.PI/2; g.player.aiming = true;
+ const wood = g.bag.wood;
+ for(let i=0;i<GATHER.tree.hp;i++){ g.attack(); step(g,.5); }
+ assert.equal(g.removed.has(tree.id), true, 'A tree falls after its hit points are spent');
+ assert.equal(g.bag.wood, wood + GATHER.tree.give.wood, 'Felling a tree yields timber exactly once');
+ // Hand-gathered nodes need E, not the sword.
+ const web = g.objects.find(o => o.type === 'web');
+ g.setZone(web.zone, web.x/TILE, web.y/TILE + 1, true);
+ const silk = g.bag.silk;
+ assert.equal(g.interact(), true);
+ assert.equal(g.bag.silk, silk + GATHER.web.give.silk, 'Silk is taken by hand');
+ ok('gathering with the sword and by hand');
+}
+{ // Chapter quests are narrated by their giver, never handed in over a counter.
+ const g = new Game();
+ const wren = g.npcTopics('wren');
+ assert.equal(wren.offers.length, 0, 'Wren does not offer Chapter I as a job');
+ assert.equal(wren.active.length, 0, 'Chapter I is not an ordinary active quest');
+ assert.ok(wren.chapter && wren.chapter.id === 'q-hearth', 'Wren carries the current chapter');
+ g.flags.met = g.flags.cottage = g.flags.boss = g.flags.hearth = true;
+ g.flags.beacon0 = g.flags.beacon1 = g.flags.beacon2 = true;
+ g.syncAutoQuests();
+ const after = g.npcTopics('wren');
+ assert.equal(after.chapter, null, 'Once the chapters are done she has nothing left to narrate');
+ assert.equal(after.offers[0]?.id, 'q-road', 'and she offers the west road instead');
+ ok('chapter quests are narrated, side work is offered');
+}
+
 console.log('PASS: ' + done.join('; ') + '.');

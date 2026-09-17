@@ -12,7 +12,6 @@ function frame(m,x,y,w,h,t,thick=1){ fill(m,x,y,w,thick,t); fill(m,x,y+h-thick,w
 function hall(m,x1,x2,y,w,t){ fill(m, Math.min(x1,x2), y-(w>>1), Math.abs(x2-x1)+1, w, t); }
 function shaft(m,x,y1,y2,w,t){ fill(m, x-(w>>1), Math.min(y1,y2), w, Math.abs(y2-y1)+1, t); }
 function blob(m,cx,cy,rx,ry,t){ for(let j=Math.floor(cy-ry);j<=cy+ry;j++) for(let i=Math.floor(cx-rx);i<=cx+rx;i++){ if(((i-cx)/rx)**2+((j-cy)/ry)**2<=1 && m[j]?.[i]!==undefined) m[j][i]=t; } }
-function speckle(m,x,y,w,h,t,chance,rng){ for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) if(m[j]?.[i]!==undefined && rng()<chance) m[j][i]=t; }
 function speckleOn(m,x,y,w,h,from,to,chance,rng){ for(let j=y;j<y+h;j++) for(let i=x;i<x+w;i++) if(m[j]?.[i]===from && rng()<chance) m[j][i]=to; }
 
 // =========================================================================
@@ -123,8 +122,8 @@ export function makeForest(){
  blob(m,71,35,4,5,T.ROCK); blob(m,33,52,4,3,T.ROCK);
  // Cave mouth in the north-east
  fill(m,64,6,7,4,T.CAVE);
- speckle(m,4,4,74,56,T.MOSS,.05,rng);
- speckle(m,4,4,74,56,T.GRASS,.03,rng);
+ speckleOn(m,4,4,74,56,T.THICKET,T.MOSS,.06,rng);
+ speckleOn(m,4,4,74,56,T.THICKET,T.GRASS,.04,rng);
  return m;
 }
 
@@ -162,7 +161,7 @@ export function makeWarren(){
  blob(m,41,44,6,4,T.WATER);
  // stair down to the Emberdeep
  fill(m,68,8,5,4,T.STONE);
- speckle(m,3,3,78,56,T.MOSS,.02,rng);
+ speckleOn(m,3,3,78,56,T.CAVE,T.MOSS,.04,rng);
  return m;
 }
 
@@ -205,7 +204,7 @@ export function makeCrypt(){
  fill(m,6,6,12,10,T.STONE);           // cold cells
  hall(m,10,22,10,5,T.STONE);
  hall(m,42,50,32,5,T.STONE);
- speckle(m,3,3,56,42,T.MOSS,.03,rng);
+ speckleOn(m,3,3,56,42,T.STONE,T.MOSS,.05,rng);
  return m;
 }
 

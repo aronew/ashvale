@@ -1,6 +1,6 @@
 // Canvas rendering for Ashvale: terrain baking, entity drawing, the sword
 // motion system, effects and lighting. Reads the model, never writes to it.
-import { TILE, T, clamp, distance, random, ENEMIES, WEAPONS, OUTFITS, SPELLS, GATHER } from './core.mjs';
+import { TILE, T, clamp, distance, random, ENEMIES, OUTFITS } from './core.mjs';
 import { ZONES, TOWN_BUILDINGS } from './data/world.mjs';
 
 export const sprites = [];
@@ -282,11 +282,23 @@ function paint(f, t, px, py, x, y, rng, zone, vale, map){
    for(let i=0;i<4;i++){ f.fillStyle = i%2 ? '#56402e' : '#402d21'; f.fillRect(px,py+i*8,32,7);
     f.fillStyle = '#2b1e16'; f.fillRect(px,py+i*8+7,32,1); }
    return;
-  case T.RUG:
-   f.fillStyle = '#5a2833'; f.fillRect(px,py,TILE,TILE);
-   f.fillStyle = '#6d3340'; f.fillRect(px+2,py+2,28,28);
-   f.fillStyle = '#c89a5e44'; f.fillRect(px+5,py+5,22,22);
-   return;
+  case T.RUG: {
+   // One continuous carpet: only the outer tiles carry a border.
+   f.fillStyle = '#5d2c37'; f.fillRect(px,py,TILE,TILE);
+   for(let i=0;i<10;i++){ f.fillStyle = pick(rng,['#67333f','#552832','#6e3a46']);
+    f.fillRect(px+Math.floor(rng()*30), py+Math.floor(rng()*30), 2+rng()*4, 2); }
+   f.fillStyle = '#a5794a33';
+   f.fillRect(px+((x%2)?4:12), py+((y%2)?4:12), 8, 8);
+   for(const [ox,oy] of [[0,-1],[-1,0],[1,0],[0,1]]){
+    if(map[y+oy]?.[x+ox] === T.RUG) continue;
+    f.fillStyle = '#8f6440';
+    if(oy === -1) f.fillRect(px,py,32,4); else if(oy === 1) f.fillRect(px,py+28,32,4);
+    else f.fillRect(px+(ox===1?28:0),py,4,32);
+    f.fillStyle = '#c89a5e66';
+    if(oy === -1) f.fillRect(px,py+4,32,1); else if(oy === 1) f.fillRect(px,py+27,32,1);
+    else f.fillRect(px+(ox===1?27:4),py,1,32);
+   }
+   return; }
   default:
    f.fillStyle = '#33313a'; f.fillRect(px,py,TILE,TILE);
  }
@@ -648,7 +660,16 @@ export function drawProp(ctx, o, t, game){
    const h = o.art === 'brazier' ? 30 : o.art === 'forgefire' ? 12 : 0;
    shadow(ctx,x,y,14,5);
    if(o.art === 'brazier'){ ctx.fillStyle = '#3a3630'; ctx.fillRect(x-4,y-30,8,30); ctx.fillStyle = '#4e463c'; ctx.fillRect(x-12,y-38,24,9); }
-   else if(o.art === 'forgefire'){ ctx.fillStyle = '#332b26'; ctx.fillRect(x-18,y-18,36,18); ctx.fillStyle = '#231d19'; ctx.fillRect(x-14,y-22,28,6); }
+   else if(o.art === 'forgefire'){
+    ctx.fillStyle = '#26221f'; ctx.fillRect(x-24,y-14,48,14);
+    ctx.fillStyle = '#332d28'; ctx.fillRect(x-26,y-20,52,7);
+    ctx.fillStyle = '#100c0a'; ctx.fillRect(x-16,y-32,32,18);
+    ctx.fillStyle = '#3d352e'; ctx.fillRect(x-20,y-38,40,7);
+    ctx.fillStyle = '#231e1a'; ctx.fillRect(x-7,y-62,14,24);           // chimney hood
+    ctx.fillStyle = '#4a3f36'; ctx.fillRect(x-11,y-66,22,6);
+    ctx.fillStyle = '#ff7a2e'; ctx.globalAlpha = .5+Math.sin(t*5)*.2;
+    ctx.fillRect(x-13,y-28,26,12); ctx.globalAlpha = 1;
+   }
    else { ctx.fillStyle = '#2f2823'; for(let i=0;i<5;i++){ const a = i/5*Math.PI*2; ctx.fillRect(x+Math.cos(a)*11-3, y+Math.sin(a)*5-2, 7, 4); } }
    for(let i=0;i<4;i++){
     const f = (t*3+i*.7)%1, s = (1-f)*(o.art==='forgefire'?11:8);

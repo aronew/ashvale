@@ -2,8 +2,8 @@
 // the model's own action methods so keys, buttons and panels agree.
 import {
  TILE, ITEMS, ITEM_ORDER, ITEM_ART, WEAPONS, WEAPON_ORDER, OUTFITS, OUTFIT_ORDER,
- SPELLS, SPELL_ORDER, SUPERS, RECIPES, ENEMIES, QUESTS, QUEST_BY_ID, NPCS, SHOPS,
- SELL_PRICE, BOUNTIES, MAX_UPGRADE, ZONES, clamp
+ SPELLS, SPELL_ORDER, SUPERS, RECIPES, ENEMIES, QUESTS, NPCS, SHOPS,
+ SELL_PRICE, BOUNTIES, MAX_UPGRADE, ZONES
 } from './core.mjs';
 import { ZONE_LABELS } from './data/world.mjs';
 import { drawMap } from './render.mjs';
@@ -299,8 +299,14 @@ export function dialogue(npcId){
   actions = `<button class="primary" id="dialogue-done">Right you are.</button>`;
  } else {
   line = npcId === 'wren' ? wrenLine(g) : (npc.idle ?? ['“Good road to you.”'])[Math.floor(g.time/17) % (npc.idle?.length ?? 1)];
-  actions = `<button class="primary" id="dialogue-done">Good road to you.</button>`;
+  actions = `<button class="primary" id="dialogue-done">${npcId === 'wren' && topics.chapter ? 'I\u2019ll see what I can do.' : 'Good road to you.'}</button>`;
  }
+ // Whoever is carrying the current chapter shows where it stands.
+ if(topics.chapter && !ready && !offer){
+  body = `<div class="journal-entry"><div class="tag">THE MAIN ROAD</div><h3>${topics.chapter.title}</h3>
+   <p>${g.questProgress(topics.chapter).map(s=>`${s.done?'\u2713':'\u25c7'} ${s.text}`).join('<br>')}</p></div>` + body;
+ }
+
  const extras = [];
  if(npc.shop) extras.push(`<button id="npc-shop">Trade</button>`);
  if(npc.forge && g.flags.forgeOpen) extras.push(`<button id="npc-forge">Use the anvil</button>`);
