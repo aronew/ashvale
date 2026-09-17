@@ -32,57 +32,57 @@ export const ITEM_ART = { wood:4, stone:5, herb:15, essence:10, iron:5, coal:5, 
 // visuals can never drift from hit timing.
 // ---------------------------------------------------------------------------
 export const SWINGS = [
- { name:'Crescent cut',    duration:.36, impact:.10, range:78, multiplier:1,    cone:-.1,  arc:[-1.35, 1.30], style:'slash',  lunge:9,  poise:8  },
- { name:'Rising backhand', duration:.34, impact:.09, range:84, multiplier:1.15, cone:-.4,  arc:[ 1.50,-1.40], style:'slash',  lunge:11, poise:10 },
- { name:'Sundering cleave',duration:.52, impact:.20, range:98, multiplier:1.75, cone:-.55, arc:[-1.70, 0.25], style:'cleave', lunge:16, poise:26 }
+ { name:'Crescent cut',    duration:.36, impact:.10, range:78, multiplier:1,    cone:-.1,  arc:[-0.95, 0.95], style:'slash',  lunge:9,  poise:8  },
+ { name:'Rising backhand', duration:.34, impact:.09, range:84, multiplier:1.15, cone:-.4,  arc:[ 1.05,-1.00], style:'slash',  lunge:11, poise:10 },
+ { name:'Sundering cleave',duration:.52, impact:.20, range:98, multiplier:1.75, cone:-.55, arc:[-1.25, 0.20], style:'cleave', lunge:16, poise:26 }
 ];
 
 export const DAGGER_SWINGS = [
- { name:'Quick nick',   duration:.20, impact:.06, range:60, multiplier:.78, cone:.25,  arc:[-.85,.55],   style:'stab',  lunge:12, poise:3 },
- { name:'Cross slice',  duration:.20, impact:.06, range:62, multiplier:.82, cone:.2,   arc:[.9,-.6],     style:'stab',  lunge:12, poise:3 },
- { name:'Gut twist',    duration:.22, impact:.07, range:58, multiplier:.9,  cone:.3,   arc:[-.3,.25],    style:'thrust',lunge:20, poise:5 },
- { name:'Bleeding fan', duration:.40, impact:.13, range:74, multiplier:1.6, cone:-.75, arc:[-2.1,2.1],   style:'spin',  lunge:8,  poise:14, bleed:true }
+ { name:'Quick nick',   duration:.20, impact:.06, range:60, multiplier:.78, cone:.25,  arc:[-.55,.35],   style:'stab',  lunge:12, poise:3 },
+ { name:'Cross slice',  duration:.20, impact:.06, range:62, multiplier:.82, cone:.2,   arc:[.6,-.4],     style:'stab',  lunge:12, poise:3 },
+ { name:'Gut twist',    duration:.22, impact:.07, range:58, multiplier:.9,  cone:.3,   arc:[-.2,.18],    style:'thrust',lunge:20, poise:5 },
+ { name:'Bleeding fan', duration:.40, impact:.13, range:74, multiplier:1.6, cone:-.75, arc:[-1.7,1.7],   style:'spin',  lunge:8,  poise:14, bleed:true }
 ];
 
 export const GREAT_SWINGS = [
- { name:'Overhead break', duration:.62, impact:.26, range:104, multiplier:1.45, cone:-.35, arc:[-1.9,.35],  style:'cleave', lunge:18, poise:34 },
- { name:'Wide reaver',    duration:.74, impact:.31, range:118, multiplier:2.1,  cone:-.95, arc:[1.9,-1.9],  style:'reaver', lunge:22, poise:52 }
+ { name:'Overhead break', duration:.62, impact:.26, range:104, multiplier:1.45, cone:-.35, arc:[-1.45,.25],  style:'cleave', lunge:18, poise:34 },
+ { name:'Wide reaver',    duration:.74, impact:.31, range:118, multiplier:2.1,  cone:-.95, arc:[1.45,-1.45],  style:'reaver', lunge:22, poise:52 }
 ];
 
 export const SPEAR_SWINGS = [
- { name:'Short thrust',  duration:.30, impact:.11, range:112, multiplier:1,    cone:.55,  arc:[-.18,.1],  style:'thrust', lunge:16, poise:9  },
- { name:'Piercing lunge',duration:.34, impact:.13, range:132, multiplier:1.3,  cone:.62,  arc:[.16,-.08], style:'thrust', lunge:30, poise:12 },
- { name:'Sweeping haft', duration:.50, impact:.19, range:104, multiplier:1.7,  cone:-.85, arc:[-1.9,1.9], style:'reaver', lunge:10, poise:30 }
+ { name:'Short thrust',  duration:.30, impact:.11, range:112, multiplier:1,    cone:.55,  arc:[-.14,.08],  style:'thrust', lunge:16, poise:9  },
+ { name:'Piercing lunge',duration:.34, impact:.13, range:132, multiplier:1.3,  cone:.62,  arc:[.12,-.06], style:'thrust', lunge:30, poise:12 },
+ { name:'Sweeping haft', duration:.50, impact:.19, range:104, multiplier:1.7,  cone:-.85, arc:[-1.5,1.5], style:'reaver', lunge:10, poise:30 }
 ];
 
 export const SABER_SWINGS = [
- { name:'Moon draw',    duration:.30, impact:.09, range:86, multiplier:1,    cone:-.25, arc:[-1.5,1.35], style:'slash', lunge:13, poise:8  },
- { name:'Falling arc',  duration:.30, impact:.09, range:88, multiplier:1.2,  cone:-.3,  arc:[1.6,-1.45], style:'slash', lunge:13, poise:9  },
- { name:'Crescent turn',duration:.44, impact:.16, range:100, multiplier:1.85, cone:-.9, arc:[-2.3,2.0],  style:'spin',  lunge:18, poise:24 }
+ { name:'Moon draw',    duration:.30, impact:.09, range:86, multiplier:1,    cone:-.25, arc:[-1.05,0.95], style:'slash', lunge:13, poise:8  },
+ { name:'Falling arc',  duration:.30, impact:.09, range:88, multiplier:1.2,  cone:-.3,  arc:[1.15,-1.05], style:'slash', lunge:13, poise:9  },
+ { name:'Crescent turn',duration:.44, impact:.16, range:100, multiplier:1.85, cone:-.9, arc:[-1.85,1.65],  style:'spin',  lunge:18, poise:24 }
 ];
 
 export const MAUL_SWINGS = [
- { name:'Rising hammer', duration:.58, impact:.24, range:92,  multiplier:1.5, cone:-.2,  arc:[1.7,-.2],  style:'cleave', lunge:14, poise:40 },
- { name:'Earthshatter',  duration:.80, impact:.34, range:110, multiplier:2.3, cone:-.6,  arc:[-2.0,.4],  style:'slam',   lunge:16, poise:75, shock:118 }
+ { name:'Rising hammer', duration:.58, impact:.24, range:92,  multiplier:1.5, cone:-.2,  arc:[1.25,-.15],  style:'cleave', lunge:14, poise:40 },
+ { name:'Earthshatter',  duration:.80, impact:.34, range:110, multiplier:2.3, cone:-.6,  arc:[-1.5,.3],  style:'slam',   lunge:16, poise:75, shock:118 }
 ];
 
 export const GLAIVE_SWINGS = [
- { name:'Storm cut',    duration:.34, impact:.11, range:100, multiplier:1.05, cone:-.45, arc:[-1.7,1.5], style:'slash',  lunge:12, poise:10 },
- { name:'Reverse reap', duration:.36, impact:.12, range:104, multiplier:1.25, cone:-.5,  arc:[1.8,-1.6], style:'slash',  lunge:14, poise:14 },
- { name:'Thunder whirl',duration:.56, impact:.21, range:116, multiplier:1.95, cone:-1,   arc:[-2.6,2.6], style:'spin',   lunge:16, poise:34, chain:3 }
+ { name:'Storm cut',    duration:.34, impact:.11, range:100, multiplier:1.05, cone:-.45, arc:[-1.25,1.1], style:'slash',  lunge:12, poise:10 },
+ { name:'Reverse reap', duration:.36, impact:.12, range:104, multiplier:1.25, cone:-.5,  arc:[1.3,-1.2], style:'slash',  lunge:14, poise:14 },
+ { name:'Thunder whirl',duration:.56, impact:.21, range:116, multiplier:1.95, cone:-1,   arc:[-2.1,2.1], style:'spin',   lunge:16, poise:34, chain:3 }
 ];
 
 export const SWING_SETS = { sword:SWINGS, dagger:DAGGER_SWINGS, great:GREAT_SWINGS, spear:SPEAR_SWINGS, saber:SABER_SWINGS, maul:MAUL_SWINGS, glaive:GLAIVE_SWINGS };
 
 // Heavy attack (X / right click) per weapon class: one charged strike.
 export const HEAVY = {
- sword:  { name:'Hearth breaker', duration:.66, impact:.28, range:112, multiplier:2.6, cone:-.7,  arc:[-2.2,.5],  style:'cleave', lunge:34, poise:60, shock:0   },
- dagger: { name:'Shadow flurry',  duration:.52, impact:.18, range:86,  multiplier:2.2, cone:-1,   arc:[-3,3],     style:'spin',   lunge:40, poise:26, shock:0   },
- great:  { name:'Worldsplitter',  duration:.95, impact:.42, range:132, multiplier:3.4, cone:-.6,  arc:[-2.3,.6],  style:'slam',   lunge:30, poise:110,shock:132 },
- spear:  { name:'Impaling drive', duration:.60, impact:.24, range:164, multiplier:2.8, cone:.7,   arc:[-.1,.05],  style:'thrust', lunge:58, poise:48, shock:0   },
- saber:  { name:'Moonfall arc',   duration:.60, impact:.22, range:124, multiplier:2.7, cone:-1.1, arc:[-2.8,2.8], style:'spin',   lunge:28, poise:44, shock:0   },
- maul:   { name:'Mountainfall',   duration:1.02,impact:.46, range:126, multiplier:3.6, cone:-.55, arc:[-2.1,.5],  style:'slam',   lunge:24, poise:140,shock:150 },
- glaive: { name:'Tempest coil',   duration:.72, impact:.27, range:136, multiplier:3.0, cone:-1.2, arc:[-3.2,3.2], style:'spin',   lunge:34, poise:70, shock:0, chain:5 }
+ sword:  { name:'Hearth breaker', duration:.66, impact:.28, range:112, multiplier:2.6, cone:-.7,  arc:[-1.6,.4],  style:'cleave', lunge:34, poise:60, shock:0   },
+ dagger: { name:'Shadow flurry',  duration:.52, impact:.18, range:86,  multiplier:2.2, cone:-1,   arc:[-2.6,2.6],     style:'spin',   lunge:40, poise:26, shock:0   },
+ great:  { name:'Worldsplitter',  duration:.95, impact:.42, range:132, multiplier:3.4, cone:-.6,  arc:[-1.7,.45],  style:'slam',   lunge:30, poise:110,shock:132 },
+ spear:  { name:'Impaling drive', duration:.60, impact:.24, range:164, multiplier:2.8, cone:.7,   arc:[-.08,.04],  style:'thrust', lunge:58, poise:48, shock:0   },
+ saber:  { name:'Moonfall arc',   duration:.60, impact:.22, range:124, multiplier:2.7, cone:-1.1, arc:[-2.2,2.2], style:'spin',   lunge:28, poise:44, shock:0   },
+ maul:   { name:'Mountainfall',   duration:1.02,impact:.46, range:126, multiplier:3.6, cone:-.55, arc:[-1.65,.4],  style:'slam',   lunge:24, poise:140,shock:150 },
+ glaive: { name:'Tempest coil',   duration:.72, impact:.27, range:136, multiplier:3.0, cone:-1.2, arc:[-2.6,2.6], style:'spin',   lunge:34, poise:70, shock:0, chain:5 }
 };
 
 // ---------------------------------------------------------------------------

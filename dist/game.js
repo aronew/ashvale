@@ -85,8 +85,12 @@ function events(){
     hitstop = e.heavy ? .085 : e.combo === game.swingSet().length-1 ? .065 : .028;
     shake = e.heavy ? 4.2 : e.combo === game.swingSet().length-1 ? 3.2 : 1.3;
     const p = game.player;
-    R.addFx('slash', { x:p.x + Math.cos(p.attackAngle)*34, y:p.y-20 + Math.sin(p.attackAngle)*34,
-     angle:p.attackAngle, color:game.weapon().trail, heavy:e.heavy, r:(game.currentSwing().range||80)*.6, life:.26 });
+    R.addFx('slash', { x:p.x + Math.cos(p.attackAngle)*22, y:p.y-26 + Math.sin(p.attackAngle)*22,
+     angle:p.attackAngle, color:game.weapon().trail, heavy:e.heavy,
+     r:(R.BLADE_LEN[game.weapon().kind] ?? 22) + 14, life:.24 });
+    if(e.style === 'cleave' || e.style === 'slam')
+     R.addFx('dust', { x:p.x + Math.cos(p.attackAngle)*30, y:p.y + Math.sin(p.attackAngle)*14,
+      r:e.heavy ? 54 : 38, seed:p.x, life:.4 });
     A.impactSound(e.heavy, e.combo, e.killed);
     break; }
    case 'slain':
@@ -125,6 +129,13 @@ function events(){
    case 'trade': A.tone(700,.12,'sine',.02); save(); break;
    case 'chest': A.tone(520,.25,'triangle',.028); break;
    case 'lamp': A.tone(760,.2,'sine',.022); break;
+   case 'arch':
+    UI.banner('The Rootvault', e.cleared ? 'Quiet, now' : 'The stone passage runs north-east');
+    UI.toast(e.cleared
+     ? 'The Rootvault is quiet. The passage runs north-east from here.'
+     : 'The Rootvault lies north-east through the stone. The Rootbound is somewhere inside it.');
+    A.tone(180,.4,'sine',.024);
+    break;
    case 'locked': A.tone(110,.28,'square',.026); break;
    case 'level': UI.banner('Level ' + game.player.level); A.tone(660,.6); A.tone(880,.7,'sine',.025,.15); break;
    case 'unlock': A.tone(520,.5,'triangle',.03); A.tone(780,.6,'triangle',.025,.16); save(); break;

@@ -1,5 +1,46 @@
 # Changelog
 
+## Combat readability and finding your way
+
+- **The melee animation is choreographed rather than rotated.** A swing was a
+  rigid stick turning about a point while the character stood still, and the
+  sweep was front-loaded so hard the blade effectively teleported and then hung
+  for the rest of the swing. Every swing now runs anticipation, a step into the
+  strike, a fast sweep that overshoots, and a recovery back onto guard, with the
+  body carrying most of it: rotation, forward drive, vertical lift and squash.
+  Something is moving on every frame.
+- A rising cut lifts and stretches the body, a falling cut does not, and the
+  finisher is a full overhead — blade raised back over the shoulder and clear of
+  the head, then driven down with a landing and a puff of dust. The three hits
+  of a string no longer read as one motion mirrored.
+- The weapon is visibly held: a forearm and fist are drawn onto the grip,
+  tinted to the outfit.
+- Motion ghosts of the blade during the fast part, and a single bright frame as
+  it passes through the hit.
+- Depth follows which way the character faces rather than where the blade points
+  on screen, so an overhead stays visible instead of vanishing behind the body.
+- **The melee proportions were wrong at the root.** Blade length was derived from
+  the attack's hit reach, which is deliberately generous, so the sword drew
+  longer than the character is tall and read as a scythe. Measured against the
+  hero sprite (25px wide, 48px tall as drawn) and rebuilt: the sword is now 22px
+  from the grip, slimmer, with a proper taper, and every weapon class is scaled
+  to the same rule.
+- Sweeps tightened from roughly 155 degrees to 110, so a swing looks like a cut
+  rather than a flail.
+- The trail is a slim tapered crescent hugging the blade tip instead of a wide
+  bright fan filling the whole arc.
+- The blade now passes behind the body when it is raised or swung away from the
+  camera, and the pivot lifts toward the shoulders when swinging north, so a
+  raised sword no longer sits as a pale slab across the character's face.
+- Less body lurch during a swing; the impact flash scales to the blade.
+- **The Rootvault gate used to say "Enter the Rootvault" and then do nothing.**
+  It is a gateway into the stone country north-east of the hollow, not a door,
+  and it now says so and points the way.
+- The map panel lists every road out of the region you are standing in — where
+  each one goes, whether you have been, whether it is sealed, and its position
+  on the map — plus how the whole world joins up, with the regions you have
+  visited ticked off.
+
 ## Chapters III–VI — The west road, the Choir, the wood, the Warrens and the fire beneath
 
 **The world.** Eight new regions joined to the original vale by waystones and doors:

@@ -786,7 +786,7 @@ export class Game {
    case 'hearth': return this.flags.hearth ? 'Rest at the hearth' : 'Examine the hearth';
    case 'ruin': return this.flags.cottage ? 'Visit the workshop' : 'Restore the workshop';
    case 'cottage': return 'Rest at the Lantern Inn';
-   case 'arch': return 'Enter the Rootvault';
+   case 'arch': return this.flags.boss ? 'The Rootvault gate' : 'Read the Rootvault gate';
    case 'herb': case 'shroom': case 'web': case 'bones': return 'Gather ' + (o.type==='web'?'spider silk':o.type==='bones'?'beast fang':o.type==='shroom'?'cave mushrooms':'moonleaf');
    case 'plot': return o.ripe ? 'Harvest moonleaf' : o.growing ? 'Check moonleaf' : 'Plant moonleaf';
    case 'prop': return PROP_PROMPT[o.art] ?? (o.label || 'Examine');
@@ -814,7 +814,11 @@ export class Game {
    case 'ruin': this.event('repair'); return true;
    case 'cottage': this.player.hp = this.player.maxHp; this.toast('You rest at the Lantern Inn. Health restored.'); this.event('heal'); return true;
    case 'hearth': this.event('hearth'); return true;
-   case 'arch': this.toast('The Rootvault · Follow the stone passage east.'); return true;
+   case 'arch':
+    // Not a door: the Rootvault is the stone country north-east of here, and
+    // this gate is how you know you have arrived at it.
+    this.event('arch',{ cleared:this.flags.boss });
+    return true;
    case 'herb': case 'shroom': case 'web': case 'bones': {
     const g = GATHER[o.type] ?? GATHER.herb;
     this.removed.add(o.id); o.respawnAt = this.time + g.regrow;
@@ -1089,6 +1093,16 @@ export class Game {
  dayLabel(){
   const h = this.hour();
   return h < 5 ? 'NIGHT' : h < 8 ? 'DAWN' : h < 12 ? 'MORNING' : h < 17 ? 'AFTERNOON' : h < 20 ? 'DUSK' : 'NIGHT';
+ }
+ // Every way out of the region you are standing in, for the map panel.
+ roadsOut(zone = this.zone){
+  return this.props().filter(o => o.type === 'portal' && !this.removed.has(o.id)).map(o => ({
+   id:o.id, label:o.label, sub:o.sub, to:o.to, door:!!o.door,
+   name:ZONES[o.to]?.name ?? o.to,
+   visited:this.visited[o.to] === true,
+   sealed:!!(o.needs && !(this.bag[o.needs] > 0)),
+   tx:Math.round(o.x/TILE), ty:Math.round(o.y/TILE)
+  })).sort((a,b) => a.name.localeCompare(b.name));
  }
  trackedQuest(){
   const active = QUESTS.filter(q => this.questActive(q.id));
