@@ -37,7 +37,7 @@ The original user direction is an Emberville-inspired dark top-down pixel-art ad
 - No multiplayer, cloud saves, save import/export, or procedural dungeon generation.
 - The vale's terrain and original entity order are frozen for save compatibility, so that region cannot be re-laid out without a migration.
 - Quest text is authored in one place now, but region descriptions still appear in both `ZONES` and the map panel.
-- Independent GitHub Pages workflow is included; owner activation and a verified successful deployment are still required. Other static hosts can serve `dist/` directly.
+- Independent GitHub Pages hosting is active at https://aronew.github.io/ashvale/, with automatic publication from `main` after checks pass. Other static hosts can serve `dist/` directly.
 
 ## Planning an expansion
 

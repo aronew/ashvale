@@ -4,6 +4,14 @@ Ashvale is a standalone static browser game. GitHub is the source of truth. It d
 
 You can edit it with Claude Code, Codex, any editor, or by hand; run it locally; publish it on a static host you control; or move it to your own server. The original art and game files are in this repository. No license or ownership transfer is required to move your own project to a different host.
 
+## Active public deployment
+
+Activated on 2026-09-17 with the owner's approval. The owner made `aronew/ashvale` public; the game is live at **https://aronew.github.io/ashvale/**. GitHub Pages uses **GitHub Actions**, with repository variable `ASHVALE_PAGES_ENABLED=true`. Every push to `main` runs the tests and checks, then publishes `dist/` if they pass. Pull requests validate without publishing.
+
+First successful public deployment: [Actions run 35184729454](https://github.com/aronew/ashvale/actions/runs/35184729454), source commit `f8c0509196ad37aae59cc643aa30c039fd4443d7`. The public game was opened and its start screen verified. No ChatGPT Sites flow is involved.
+
+To pause future automatic releases, set `ASHVALE_PAGES_ENABLED=false`; this leaves the currently published site online. To take the site offline, use Settings → Pages → Unpublish site. Keep repository visibility and website publication as explicit owner decisions.
+
 ## Run locally
 
 ```sh
@@ -16,14 +24,14 @@ Open the printed local address. No dependency installation is necessary. Use an 
 
 `.github/workflows/pages.yml` runs both test suites and asset/module checks on pushes and pull requests. It produces an `ashvale-standalone` Actions artifact containing only `dist/`, suitable for another static host too.
 
-Deployment is opt-in so adding this workflow does not silently publish a previously private game. One-time owner setup:
+Deployment is opt-in; the owner has now enabled it for this repository. The setup below is retained for recreating hosting in a fork or another repository:
 
 1. Open the repository's **Settings → Pages** and select **GitHub Actions** as the publishing source.
 2. Check that the Pages audience is what you intend. A private source repository does not by itself make a Pages website private; ordinary GitHub Pages sites are public.
 3. Open **Actions → Check and publish Ashvale → Run workflow**, choose `main`, and check **publish**. A successful `deploy` job reports the real URL.
 4. For automatic publication on later pushes to `main`, set repository Actions variable **`ASHVALE_PAGES_ENABLED`** to **`true`** under Settings → Secrets and variables → Actions → Variables. Remove it or set it to `false` to turn automatic publication off. Manual publication remains available.
 
-For this project the normal default address would be `https://aronew.github.io/ashvale/`, but do not call it live until the deployment job succeeds. No custom domain is assumed. This workflow cannot enable the repository's Pages setting or upgrade your GitHub plan.
+The verified public address is `https://aronew.github.io/ashvale/`. For future releases, check the deployment job before claiming an update is live. No custom domain is assumed. This workflow cannot enable the repository's Pages setting or upgrade your GitHub plan.
 
 **Private-repository eligibility:** GitHub Pages on private repositories requires a qualifying plan (such as GitHub Pro). If Settings → Pages offers an upgrade, do not make the repository public as a workaround without the owner's explicit choice. Use another static host or a server under the owner's control instead.
 

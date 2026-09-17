@@ -1,5 +1,12 @@
 # Changelog
 
+## Public independent release — 2026-09-17
+
+- Enabled GitHub Pages after the owner made the repository public.
+- Published the game at https://aronew.github.io/ashvale/ without the ChatGPT Sites pipeline.
+- Enabled automatic deployment from `main` after model tests and asset/module checks pass.
+- Verified the first deployment succeeded and the public start screen loads; documented the active hosting settings and how to pause future releases.
+
 ## Independent hosting handoff
 
 - Made GitHub and owner-controlled static hosting the default workflow; ChatGPT Sites is only a separate legacy copy.

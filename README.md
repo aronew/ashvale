@@ -6,6 +6,8 @@ An original, single-player pixel-art action RPG for the browser. Wake a dead vil
 
 **Standalone and owner-controlled.** Run locally or publish `dist/` on any static host. The [independent deployment guide](docs/DEPLOYMENT.md) covers GitHub Pages and other hosts. The former ChatGPT Sites address is a separate legacy copy, not a runtime dependency.
 
+**Play now:** [Ashvale](https://aronew.github.io/ashvale/)
+
 ## Run locally
 
 Requires Node.js 20 or later. No runtime packages, dependency installation, API keys, or build step are required.
@@ -111,7 +113,7 @@ Read [AGENTS.md](AGENTS.md), then [architecture](docs/ARCHITECTURE.md), [save co
 
 Progress is stored in browser localStorage under `ashvale-adventure-v1`, now at schema `version: 2`. Chapter I/II saves written by the original release still load: the vale's terrain and entity IDs are frozen, and everything new defaults in. It is tied to the browser and origin; local development does **not** automatically inherit the hosted game's save. There is no cloud-save service.
 
-GitHub is the source of truth. The included Actions workflow tests the game and creates a standalone download artifact. Enable GitHub Pages and opt into publishing to deploy independently; automatic publishing on `main` can be enabled with `ASHVALE_PAGES_ENABLED=true`. Until that setup is complete, no independent hosted URL is claimed. See [deployment notes](docs/DEPLOYMENT.md).
+GitHub is the source of truth. The included Actions workflow tests the game and creates a standalone download artifact. GitHub Pages is active at https://aronew.github.io/ashvale/; `ASHVALE_PAGES_ENABLED=true` enables automatic publication after successful checks on pushes to `main`. Pull requests only validate. See [deployment notes](docs/DEPLOYMENT.md).
 
 ## Validation and limitations
 
@@ -123,5 +125,5 @@ Known limitations: characters are still static directional sprites transformed i
 
 ## Assets and licensing
 
-The sprite atlas was generated for this project. No Emberville recording frames, sprites, maps, audio, or code are included. All terrain, buildings, props, weapons, effects, lighting and UI are drawn in code; outfits are produced by hue-shifting the hero sprite's garment pixels. See [asset notes](docs/ASSETS.md). No open-source license has been selected; do not assume permission to redistribute this private project.
+The sprite atlas was generated for this project. No Emberville recording frames, sprites, maps, audio, or code are included. All terrain, buildings, props, weapons, effects, lighting and UI are drawn in code; outfits are produced by hue-shifting the hero sprite's garment pixels. See [asset notes](docs/ASSETS.md). No open-source license has been selected; do not assume permission to redistribute the project solely because the repository is publicly visible.
 
