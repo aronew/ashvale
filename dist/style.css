@@ -5,3 +5,108 @@
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 
 #combo-readout{height:28px;padding:5px 13px;margin-bottom:8px;background:#191622dc;border:1px solid #aa855a77;color:#e8d2ac;font:12px Georgia,serif;letter-spacing:.4px;opacity:0;transition:opacity .15s;white-space:nowrap;pointer-events:none}#combo-readout.visible{opacity:1}#combo-readout>span{display:inline-flex;gap:5px;margin-right:9px}#combo-readout i{width:6px;height:6px;transform:rotate(45deg);background:#554653;border:1px solid #aa855a}#combo-readout i.lit{background:#efca8d;box-shadow:0 0 7px #dfac5977}
+
+/* --- expansion HUD ---------------------------------------------------- */
+.meter.focus{height:5px;margin-top:3px;background:#221d2b;border-radius:3px;overflow:hidden;border:1px solid #3a3143}
+.meter.focus>div{height:100%;background:linear-gradient(90deg,#8e6fd0,#e6c07a);transition:width .18s}
+.meter.focus.ready>div{background:linear-gradient(90deg,#ffd87a,#fff3c4);box-shadow:0 0 8px #ffd87a99}
+.meter.focus.wide{height:9px;margin:10px 0 4px}
+#shield-pip{color:#ffe6b0;font-size:10px;letter-spacing:.06em}
+#coin-purse{color:var(--gold);letter-spacing:.08em}
+#coin-purse b{color:var(--cream);font-weight:600}
+#boss-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:min(440px,62%);pointer-events:none;text-align:center;z-index:5}
+.boss-line{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#e6c3ad;text-shadow:0 1px 3px #000}
+.boss-line i{font-style:normal;color:var(--gold);font-size:10px}
+.boss-track{height:9px;margin-top:4px;background:#1b1219cc;border:1px solid #5a3b3f;border-radius:5px;overflow:hidden}
+#boss-fill{height:100%;background:linear-gradient(90deg,#8c3540,#d8836a);transition:width .2s}
+#area-banner b{display:block;font-weight:400}
+#area-banner i{display:block;font-size:12px;font-style:normal;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.slot.tiny{min-width:44px;opacity:.82}
+.slot .weapon.heavy{color:#e0a07a}
+.slot .weapon.focus-icon{color:#e6c07a}
+.touch-actions{display:none}
+@media(pointer:coarse){
+ /* The parent strip is pointer-events:none so the canvas stays draggable;
+    every control inside it has to opt back in. */
+ .touch-actions{display:grid;grid-template-columns:repeat(3,auto);grid-auto-rows:auto;gap:8px;
+  pointer-events:none;align-items:center;justify-items:center}
+ .touch-actions button{width:50px;height:50px;border-radius:50%;background:#241f2be6;
+  border:1px solid var(--line);color:var(--cream);font-size:17px;pointer-events:auto;touch-action:none;
+  display:flex;align-items:center;justify-content:center;padding:0}
+ .touch-actions button:active{background:#413756;border-color:var(--gold)}
+ .touch-actions .big{width:74px;height:74px;font-size:24px;border-color:var(--gold);color:var(--gold);
+  grid-column:3;grid-row:1/span 2;background:#2b2436ee}
+ .t-focus{grid-column:1;grid-row:1} .t-heavy{grid-column:2;grid-row:1}
+ .t-tonic{grid-column:1;grid-row:2} .t-dodge{grid-column:2;grid-row:2}
+ .t-swap{grid-column:1;grid-row:3}  .t-spell{grid-column:2;grid-row:3}
+ #touch-interact{position:static;width:50px;height:50px;grid-column:3;grid-row:3;
+  background:#3a2e3ae6;border-color:#9e835a}
+ /* The touch cluster replaces the action hotbar; only the two utility slots stay. */
+ .hotbar-wrap{bottom:auto;top:6px;left:auto;right:10px;transform:none;align-items:flex-end;pointer-events:none}
+ .hotbar{gap:4px;padding:4px 6px;pointer-events:auto}
+ .hotbar .slot:not(.utility),.hotbar-divider,.controls-hint,#combo-readout{display:none}
+ .hotbar .slot small,.hotbar .slot kbd{display:none}
+ /* Keep the bottom corners clear: the d-pad owns the left, the action
+    cluster owns the right. */
+ .location-hud{top:72px;right:10px;left:auto;bottom:auto;text-align:right}
+ .location-hud #map-btn canvas{display:none}
+ .location-hud #map-btn{padding:5px 9px}
+ #toasts{left:12px;right:auto;top:auto;bottom:186px;max-width:52%;align-items:flex-start}
+ #interact-prompt{top:46%}
+ #touch-controls{bottom:20px}
+ .quest-hud{max-width:58%}
+ #quest-progress{display:none}
+ .corner-status{display:none}
+}
+@media(pointer:coarse) and (max-width:560px){
+ .touch-actions button{width:44px;height:44px;font-size:15px}
+ .touch-actions .big{width:62px;height:62px;font-size:20px}
+ #touch-interact{width:44px;height:44px}
+ .dpad{width:108px;height:75px;grid-template-columns:repeat(3,35px);grid-template-rows:repeat(2,35px)}
+ .quest-hud{max-width:52%}
+ .quest-hud p{display:none}
+ .location-title{font-size:13px}
+ .location-sub{display:none}
+ #toasts{bottom:172px;max-width:56%;font-size:11px}
+ .player-hud{left:12px;top:12px;gap:8px}
+ .portrait{width:44px;height:48px}
+}
+
+/* --- panels ----------------------------------------------------------- */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.tabs button{padding:7px 14px;border-radius:999px;background:#241f2b;border:1px solid var(--line);color:var(--muted);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.tabs button.on{background:#3a2f3c;border-color:var(--gold);color:var(--cream)}
+.tabs button:hover{color:var(--cream)}
+.gear-list{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(232px,1fr));margin-bottom:16px}
+.gear-card{background:#1d1b24;border:1px solid var(--line);border-radius:10px;padding:12px 13px;display:flex;flex-direction:column;gap:7px}
+.gear-card.equipped{border-color:var(--gold);background:#272031}
+.gear-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.gear-head h4{margin:0;font-size:14px;color:var(--cream)}
+.gear-head h4 em{color:var(--gold);font-style:normal}
+.gear-card p{margin:0;font-size:12px;color:var(--muted);line-height:1.5}
+.gear-card .kind{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.gear-stats{display:flex;flex-wrap:wrap;gap:6px}
+.gear-stats span{font-size:11px;background:#2a2431;border:1px solid var(--line);border-radius:5px;padding:3px 7px;color:#cfc3ad}
+.gear-stats .perk{color:#e6c07a;border-color:#5b4a35}
+.gear-card button{margin-top:auto;padding:7px;border-radius:7px;background:#2f2739;border:1px solid var(--line);color:var(--cream);font-size:12px}
+.gear-card button:disabled{opacity:.45;cursor:default}
+.gear-card button:not(:disabled):hover{border-color:var(--gold)}
+.swatch{width:16px;height:16px;border-radius:50%;border:1px solid var(--line);display:inline-block}
+.cost{display:flex;flex-wrap:wrap;gap:5px;margin:2px 0 0}
+.cost span{font-size:11px;padding:2px 6px;border-radius:4px;background:#241f2b;border:1px solid var(--line)}
+.cost .ok{color:#a8d4b0;border-color:#3e5a46}
+.cost .short{color:#d99a9a;border-color:#5a3e40}
+.sell-group{display:flex;gap:6px;flex-shrink:0}
+.sell-group button{padding:7px 10px;border-radius:7px;background:#2f2739;border:1px solid var(--line);color:var(--cream);font-size:12px}
+.reward{color:#e6c07a;font-size:12px;margin-top:6px}
+.journal-entry.locked{opacity:.55}
+.portrait-sprite{width:72px;height:72px;flex-shrink:0}
+@media(max-width:650px){.gear-list{grid-template-columns:1fr}}
+
+/* --- damage feedback --------------------------------------------------- */
+#hurt-flash{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .28s ease-out;
+ background:radial-gradient(ellipse at center,rgba(150,20,40,0) 38%,rgba(150,20,40,.42) 78%,rgba(110,10,28,.72) 100%)}
+#hurt-flash.hit{opacity:1;transition:opacity .05s linear}
+#hurt-flash.low{opacity:.42;animation:lowpulse 1.6s ease-in-out infinite}
+@keyframes lowpulse{0%,100%{opacity:.26}50%{opacity:.5}}
+@media(prefers-reduced-motion:reduce){#hurt-flash.low{animation:none;opacity:.3}}

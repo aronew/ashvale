@@ -2,53 +2,76 @@
 
 ## Runtime
 
-A dependency-free static HTML application. `index.html` loads `game.js` as an ES module; it imports `core.mjs`. A modern browser supplies Canvas 2D, native dialog elements, localStorage, pointer events, requestAnimationFrame, and optional Web Audio. Optional WebMCP tools are feature-detected and are not required to play.
+A dependency-free static HTML application. `index.html` loads `game.js` as an ES module; it imports `core.mjs`, `render.mjs`, `ui.mjs` and `audio.mjs`, and `core.mjs` imports the four pure data modules under `dist/data/`. A modern browser supplies Canvas 2D, native dialog elements, localStorage, pointer events, requestAnimationFrame, and optional Web Audio. Optional WebMCP tools are feature-detected and are not required to play.
+
+```
+index.html
+└── game.js          input, camera, frame loop, event routing, saving
+    ├── core.mjs     the whole simulation (no DOM, no canvas, no storage, no timers)
+    │   └── data/    content.mjs · world.mjs · spawns.mjs · quests.mjs  (pure tables)
+    ├── render.mjs   terrain baking, sword motion, entities, effects, lighting, maps
+    ├── ui.mjs       HUD and panels
+    └── audio.mjs    synthesized music and sound
+```
+
+Keep `core.mjs` and everything under `dist/data/` free of browser APIs. That boundary is what makes `tests/playthrough.mjs` able to play the entire game in Node.
 
 ## Model: `dist/core.mjs`
 
-`Game` owns the tile map, player, inventory (`bag`), quest flags, objects, enemies, projectiles, particles, text effects, and an event queue. `update(dt, input)` advances simulation; `attack`, `dash`, `spell`, `heal`, `interact`, `craft`, `repair`, `rekindle`, and `lightBeacon` are the action entry points.
+`Game` owns every zone's tile map, the player, the inventory (`bag`), quest flags, quest state, gear, objects, enemies, projectiles, particles, shockwaves, floating text and an event queue. `update(dt, input)` advances the simulation. The action entry points are `attack`, `heavyAttack`, `dash`, `cast`, `useSuper`, `heal`, `interact`, `craft`, `upgradeWeapon`, `equip`, `buy`, `sell`, `startQuest`, `completeQuest`, `takeBounty`, `claimBounty`, `setZone`, and the three legacy chapter actions `repair`, `rekindle` and `lightBeacon`.
 
-The world is 80×58 tiles at 32 world pixels per tile. Tile codes: 0 void, 1 grass, 2 path, 3 water, 4 stone, 5 bridge, 6 garden. `walkable` checks tile corners and object radii; `move` resolves axes separately. Region definitions are currently code in `makeMap`, not external map files.
+### Zones
 
-`build` creates original objects in a stable sequence. New Moonfen objects use explicit IDs after the original sequence. Original enemies have `eN` IDs and `boss`; Moonfen enemies use `wispN`. Do not reorder legacy generation casually.
+`ZONES` in `data/world.mjs` lists nine regions, each with its own dimensions, map builder, spawn point, light mode and music theme. `game.zone` selects the active one; `game.map` is a getter onto `game.maps[game.zone]`.
+
+Objects and enemies live in **one flat array each**, tagged with a `zone`. `index()` buckets solid objects into a 96px grid per zone so `walkable` stays cheap on the larger maps, and groups entities per zone. `here()` and `props()` return the active zone's entities and re-index automatically if the arrays are swapped wholesale (which tests do).
+
+Tile codes 0–6 keep their original meanings (void, grass, path, water, stone, bridge, garden); 7–23 add cave, rock, dirt, wood, rug, lava, market, moss, crystal, ember, sand, cinder, chasm, wall, ash, thicket and field. `SOLID` lists what blocks movement; `HAZARD` lists floors that burn.
+
+Travel is by `portal` objects. `PORTALS` defines every pair two-way, with the arrival tile in the target zone. `setZone` clears transient state, nudges the player to open ground if the arrival tile is ever blocked, marks the zone visited, and fires a `zone` event. A portal may carry `needs` (an item id) and `locked` (the line the player reads instead); the deep stair uses this, and the item it needs drops from the boss rather than from a quest hand-in, so the road can never be sealed by work the player has not turned in.
 
 ### Combat
 
-`SWINGS` is the source of truth for names, duration, impact time, reach, multiplier, and arc threshold. The player stores combo stage, combo timer, attack duration, fixed attack angle, an impact-consumed flag, and a short input buffer.
+Each weapon class has its own swing table in `data/content.mjs`: `SWINGS` (sword, 3 hits), `DAGGER_SWINGS` (4), `GREAT_SWINGS` (2), `SPEAR_SWINGS`, `SABER_SWINGS`, `MAUL_SWINGS`, `GLAIVE_SWINGS`, plus one `HEAVY` entry per class. A swing entry is the single source of truth for both the model and the renderer:
 
-| Stage | Duration | Impact | Damage multiplier | Reach |
-| --- | --- | --- | --- | --- |
-| Crescent cut | 0.36s | 0.10s | 1× | 78px |
-| Rising backhand | 0.34s | 0.09s | 1.15× | 84px |
-| Sundering cleave | 0.52s | 0.20s | 1.75× | 98px |
+| Field | Used by | Meaning |
+| --- | --- | --- |
+| `duration` | both | total swing length in seconds |
+| `impact` | both | when damage lands, and where the renderer's trail begins |
+| `range`, `cone` | model | hitbox reach and arc threshold |
+| `multiplier` | model | damage scale |
+| `poise`, `shock`, `chain`, `bleed` | model | stagger weight and finisher extras |
+| `arc`, `style`, `lunge` | renderer | blade sweep, motion curve, body drive |
 
-`attack` starts or buffers; `update` triggers `strike` once at the impact threshold. `strike` handles enemies and gatherable objects. Finisher gathering damage is two rather than one. The combo can continue for 0.7s after a swing ends; early presses are buffered for 0.2s. Held input starts subsequent swings when the current one finishes. Current near-enemy targeting can override the requested facing angle; mouse aim is not a strict targeting override.
+`attack()` starts or buffers a swing; `update()` calls `strike()` exactly once when `attackDuration - attack >= impact / weaponSpeed`. Damage is `round(attackPower × multiplier)`, criticals multiply by 1.85. `attackPower()` is `upgradedPower(weapon.power, upgradeLevel) + (level-1)×3 + beacon blessing + outfit attack`. A fresh save is the worn hearthblade at 17, which is why legacy damage numbers still hold.
 
-Base attack is 17, +7 for tempered blade, +3 per level beyond level 1, and +8 for the Chapter II blessing. The guardian has extra melee reach tolerance. `hitEnemy` owns damage, knockback, drops, experience, and boss rewards.
+The combo continues for 0.7s after a swing ends; early presses buffer for 0.2s; holding the attack input starts the next swing when the current one finishes. Dodging cancels a swing. The body lunges along `swing.lunge` during the wind-up, but never while an enemy is inside 46px, so a swing cannot carry you past your target.
 
-Cinder wisps use a 0.65s directional telegraph before shooting. Projectiles collide with terrain and the player; dodge/invincibility guards prevent damage. Original enemies use pursuit/melee behavior. AI uses local steering, not pathfinding.
+Non-boss enemies have `poise`; enough poise damage staggers them for 1.25s, during which they take 30% more damage. Bosses do not stagger. `hitEnemy` owns armour, stagger, knockback, floating numbers, focus gain and death.
+
+Enemy behaviour is selected by the `ai` field on each `ENEMIES` entry: `chase`, `flier`, `lunger`, `caster`, `kiter`, `shielded`, `blinker`, `slammer`, and five bespoke `boss-*` blocks. Bosses pick moves at random from a per-phase pool, telegraph them, and change phase at 66% and 33% health. Every AI uses local steering; there is no pathfinding.
 
 ### Progression
 
-Chapter I flags: `met`, `cottage`, `boss`, `hearth`. `upgrade` represents the crafted blade. Chapter II flags: `beacon0`, `beacon1`, `beacon2`, and `beacons` (completed/rewarded). Beacon actions verify proximity, Chapter I completion, nearby wisps, and resources before granting one-time rewards.
+Chapter I and II still run on the original flags (`met`, `cottage`, `boss`, `hearth`, `beacon0..2`, `beacons`, `upgrade`). They are presented as quests `q-hearth` and `q-beacons` marked `auto`, and `syncAutoQuests()` opens and closes them from those flags. It runs from `event()` whenever a state-changing event fires, guarded against re-entry.
 
-## Browser layer: `dist/game.js`
+Everything after Chapter II uses the data-driven engine in `data/quests.mjs`. A quest is a list of steps of kind `flag`, `talk`, `kill`, `collect`, `reach`, `interact` or `craft`. `stepDone` evaluates a step against live game state rather than a stored cursor, so progress cannot desynchronise from the world. `questReady` means every step is satisfied; `completeQuest` consumes `collect` materials, pays out, and is idempotent.
 
-- Loads the 4×4 atlas and prepares individual canvas sprite surfaces.
-- Bakes static floor geometry once, then draws visible objects/entities sorted by Y coordinate.
-- Follows the player with the camera; projects interaction prompts into screen coordinates.
-- Renders procedural sword motion, trails, body lean, short impact freeze, particles, health bars, and telegraphs.
-- Maps keyboard/mouse/touch controls to model actions. Native dialogs and tab visibility pause simulation.
-- Consumes model events for sound, banners, toasts, quest panels, saving, and completion panels.
-- Periodically refreshes HUD/map information and saves every 15 active seconds, at milestones, and on page lifecycle events.
-- Registers optional `read_adventure` and `open_adventure_journal` tools when supported. Their real browser integration remains unverified.
+Rewards can grant experience, ember marks, items, a weapon, an outfit, a spell, a recipe, or a flag. Everything is obtainable after the ending; nothing is missable.
 
-The renderer currently has some duplicated quest and region logic. When adding a third chapter, consider extracting shared content definitions rather than growing more conditional chains. This is suggested refactoring, not a requirement to rewrite the current game first.
+## Browser layer
+
+- `render.mjs` bakes each zone's terrain once into an offscreen canvas (keeping at most three), dithers the seams between ground types, draws cliff faces only where rock meets open ground, and draws the town's buildings as top-down pitched roofs. Entities are sorted by ground line. A screen-space lighting pass fills a darkness colour chosen by the zone's light mode and the day/night curve, then punches holes for the player, lamps, fires, beacons, crystal and spell effects. Outfits are produced by hue-shifting only the hero sprite's garment pixels (hue band 296–360), leaving skin, hair and charcoal outlines alone.
+- **Every colour treatment is baked once into a cached canvas.** `drawSprite` never sets `ctx.filter` during a frame; each filter forces its own compositing pass and measured at two thirds of the frame budget in the larger regions. Enemy tints, node tints, hit flashes and darkened sprites all go through `tinted(src, filter)`, keyed off a `key` property set on each source canvas.
+- The sword is drawn from one `bladePose(swing, phase, impactPhase)` function that also generates the tapered blade-tip ribbon, so the arc on screen is the arc the model swung. Blade length comes from `BLADE_LEN` per weapon class, deliberately shorter than the hitbox reach.
+- `ui.mjs` owns every panel and the HUD. UI buttons call the same model actions as the keys.
+- `game.js` maps keyboard, mouse and touch to model actions, runs the camera with a small lead in the facing direction, applies hitstop and slow-motion, and turns model events into sound, banners, panels, effects and saves.
 
 ## Safe feature additions
 
-- **New region:** extend `makeMap`, preserve legacy generation outputs, append stable-ID objects/enemies, add region labels and map/quest guidance, and test traversability.
-- **New enemy:** add explicit IDs and model AI/projectiles, renderer and telegraph behavior, rewards, save compatibility, and deterministic tests.
-- **New item/recipe:** update inventory defaults, item names, model resource guards, inventory presentation, and save defaults.
-- **New quest:** centralize completion guards in model methods, make rewards idempotent, update journal/HUD/dialogue/map guidance, and test old and new saves.
-- **New combat animation:** keep model impact timing and renderer phases aligned; add actual animation assets if moving beyond the current transformed static sprites.
+- **New region:** add a builder and a `ZONES` entry, a two-way `PORTALS` pair, a `SPAWNS` block and map labels. Run the traversability test — it walks every zone from its spawn and asserts nothing is walled in.
+- **New enemy:** add an `ENEMIES` entry with an existing `ai`, drops and an atlas sprite plus a tint; add a silhouette mark in `enemyFlourish` if it shares a sprite with something else.
+- **New weapon:** add a `WEAPONS` entry, a swing set (or reuse a class), a `HEAVY` entry if the class is new, a `BLADE_LEN`/`BLADE_WIDTH` entry, and a recipe or quest reward so it is obtainable. The test suite checks obtainability.
+- **New item, outfit or spell:** add it to the tables and to a recipe or reward. The content-sanity test fails on anything unreachable or misspelt.
+- **New quest:** add it to `QUESTS` with a giver who exists, requirements that resolve, and steps whose targets exist. `tests/playthrough.mjs` will start and finish it.
+- **New combat animation:** change the swing table, never the renderer alone. Model impact timing and renderer phase read the same fields.
