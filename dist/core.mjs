@@ -51,6 +51,8 @@ export class Game {
   this.build(); this.index();
   if(saved) this.restore(saved);
   this.index();
+  this.syncAutoQuests();
+  this.events.length = 0;        // construction is not something the UI should react to
  }
 
  get map(){ return this.maps[this.zone]; }
@@ -63,7 +65,7 @@ export class Game {
   let n = 0;
   const add = (type,x,y,props={}) => { const o = { id:'o'+n++, type, x:x*TILE, y:y*TILE, hp:3, zone:'vale', ...props }; this.objects.push(o); return o; };
   // ---- ORIGINAL SEQUENCE. Do not reorder, insert into, or re-seed. -------
-  add('cottage',20.4,28,{radius:43}); add('ruin',31.7,27.9,{radius:43}); add('hearth',27.5,33,{radius:19}); add('npc',25,31.5,{radius:12,npc:'wren'}); add('arch',57.2,17.1,{radius:0});
+  add('cottage',20.4,28,{radius:43}); add('ruin',31.7,27.9,{radius:43}); add('hearth',27.5,33,{radius:19}); add('npc',25,31.5,{radius:12,npc:'wren',name:'Wren'}); add('arch',57.2,17.1,{radius:0});
   [[21,32],[31,32],[24,26],[28,39],[37.8,33],[44.8,33],[50,23],[59,17],[69,20],[10,34],[26,46]].forEach(p=>add('lamp',...p,{radius:6}));
   [[14,31],[34,38],[48,27],[61,20],[72,8]].forEach(p=>add('chest',...p,{radius:12}));
   for(let y=40;y<=42;y++) for(let x=17;x<=19;x++) add('plot',x+.5,y+.5,{radius:0,growing:0,ripe:false});
@@ -94,7 +96,7 @@ export class Game {
 
   for(const [zone,spec] of Object.entries(SPAWNS)){
    (spec.props||[]).forEach(([art,x,y,opts={}],i)=>{ if(opts.hidden) return; put(`pr-${zone}-${i}`, zone, 'prop', x, y, { art, radius:opts.radius??0, ...opts }); });
-   (spec.npcs||[]).forEach(([npc,x,y],i)=>put(`npc-${zone}-${i}`, zone, 'npc', x, y, { radius:12, npc }));
+   (spec.npcs||[]).forEach(([npc,x,y],i)=>put(`npc-${zone}-${i}`, zone, 'npc', x, y, { radius:12, npc, name:NPCS[npc]?.name ?? '' }));
    (spec.nodes||[]).forEach(([type,x,y],i)=>{ const g = GATHER[type]; put(`nd-${zone}-${i}`, zone, type, x+.5, y+.5, { radius:g.radius, hp:g.hp }); });
    (spec.mobs||[]).forEach(([type,x,y,opts={}],i)=>this.enemies.push(this.makeMob(type,x,y,zone,{ id:`m-${zone}-${i}`, ...opts })));
   }
@@ -148,7 +150,11 @@ export class Game {
   if(this.walkable(entity.x+dx,entity.y,r,z)) entity.x += dx;
   if(this.walkable(entity.x,entity.y+dy,r,z)) entity.y += dy;
  }
- event(type,data={}){ this.events.push({ type, ...data }); }
+ event(type,data={}){
+  this.events.push({ type, ...data });
+  // Chapter I and II follow the original flags, so any state change can close them.
+  if(!this._syncing && AUTO_SYNC.has(type)){ this._syncing = true; try { this.syncAutoQuests(); } finally { this._syncing = false; } }
+ }
  toast(text){ this.event('toast',{ text }); }
  float(text,x,y,color='#efcf8a',size=11){ this.texts.push({ text,x,y,color,size,life:1.6 }); }
  particlesAt(x,y,color,n=10,spread=1){
@@ -448,7 +454,11 @@ export class Game {
   const p = this.player;
   for(const k of ['attack','dash','dashCd','spell','invincible','comboTimer','attackBuffer','superT','perfect','burnT']) p[k] = Math.max(0, p[k]-dt);
   p.stamina = Math.min(100, p.stamina + dt*(19 + (this.flags.beacons?6:0) + (this.outfit().stamina||0)));
-  if(p.burnT > 0 && Math.floor(this.time*4) !== Math.floor((this.time-dt)*4)) this.hurt(4,'fire');
+  if(p.burnT > 0){
+   p.burnTick = (p.burnTick ?? 0) + dt;
+   if(p.burnTick >= .6){ p.burnTick = 0; const n = Math.max(1, Math.round(4*(1-(this.outfit().fire||0))));
+    p.hp = Math.max(0, p.hp - n); this.float('-'+n, p.x, p.y-30, '#ff9a55'); if(p.hp <= 0) this.die(); }
+  } else p.burnTick = 0;
 
   // movement
   let dx = input.x||0, dy = input.y||0;
@@ -467,9 +477,19 @@ export class Game {
    const crowded = this.here().some(e => e.hp > 0 && distance(e,p) < 46);
    if(!crowded) this.move(p, Math.cos(p.attackAngle)*push, Math.sin(p.attackAngle)*push);
   }
-  // hazard floors
+  // Hazard floors burn on their own clock, and never grant dodge frames.
   const t = this.tile(p.x,p.y);
-  if(HAZARD[t] && Math.floor(this.time*3) !== Math.floor((this.time-dt)*3)) this.hurt(HAZARD[t],'fire');
+  if(HAZARD[t]){
+   p.hazardT = (p.hazardT ?? 0) + dt;
+   if(p.hazardT >= .8){
+    p.hazardT = 0;
+    const burn = Math.max(1, Math.round(HAZARD[t] * (1 - (this.outfit().fire||0))));
+    p.hp = Math.max(0, p.hp - burn);
+    this.float('-'+burn, p.x, p.y-36, '#ff9a55');
+    this.event('scorched');
+    if(p.hp <= 0) this.die();
+   }
+  } else p.hazardT = 0;
 
   if(!p.attackHit && p.attackDuration - p.attack >= this.currentSwing().impact/(this.weapon().speed??1)){ p.attackHit = true; this.strike(); }
   if(p.attack <= 0 && (input.attack || p.attackBuffer > 0)) this.attack(false);
@@ -1139,6 +1159,9 @@ export class Game {
   this.syncAutoQuests();
  }
 }
+
+// Events that can move Chapter I or II forward.
+const AUTO_SYNC = new Set(['victory','beacon-lit','moonfen-complete','boss-defeated','craft','dialogue','pickup','quest-done','chest']);
 
 // Props the player can walk up to and press E on.
 const INTERACTIVE_PROPS = new Set(['anvil','forgefire','loom','cauldron','board','campfire','fountain','shrine','cat','statue','sign']);

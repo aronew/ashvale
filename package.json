@@ -1,14 +1,16 @@
 {
   "name": "ashvale",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
-  "description": "An original two-chapter pixel-art browser RPG",
-  "engines": { "node": ">=20" },
+  "description": "An original pixel-art browser action RPG",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "node scripts/serve.mjs",
     "start": "node scripts/serve.mjs",
-    "test": "node tests/expansion.mjs",
-    "check": "node --check dist/game.js && node --check dist/core.mjs && node --check scripts/serve.mjs && node scripts/check.mjs"
+    "test": "node tests/expansion.mjs && node tests/playthrough.mjs",
+    "check": "node scripts/check.mjs"
   }
 }

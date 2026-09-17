@@ -1,112 +1,361 @@
-import {Game,TILE,MW,MH,clamp,distance,random,SWINGS} from './core.mjs';
-const $=s=>document.querySelector(s),canvas=$('#world'),ctx=canvas.getContext('2d'),panel=$('#panel');
-const SAVE_KEY='ashvale-adventure-v1';let saved=null;try{saved=JSON.parse(localStorage.getItem(SAVE_KEY));}catch{}
-let game=new Game(saved),started=false,ready=false,keys=new Set(),pointerDown=false,last=0,hudTimer=0,saveTimer=0,hitstop=0,shake=0,zoom=1.5,cam={x:0,y:0},sound=false,audio=null,melodyTimer=null,lastPanelFocus=null;
-const atlas=new Image();atlas.src='sprites.png';const sprites=[];
-const sprMap={tree:4,ore:5,chest:6,lamp:7,cottage:8,ruin:9,hearth:10,arch:11,slime:12,bat:13,npc:14,herb:15,beacon:7};
-const sizes={tree:[116,138],ore:[55,51],chest:[42,38],lamp:[38,73],cottage:[188,184],ruin:[176,169],hearth:[72,66],arch:[135,133],npc:[53,62],herb:[42,40],beacon:[64,109]};
-function spriteCSS(){document.querySelectorAll('[data-sprite]').forEach(el=>{const i=+el.dataset.sprite;el.style.backgroundPosition=`${i%4*100/3}% ${Math.floor(i/4)*100/3}%`;});}
-atlas.onload=()=>{for(let i=0;i<16;i++){const c=document.createElement('canvas');c.width=c.height=96;const g=c.getContext('2d');g.imageSmoothingEnabled=false;g.drawImage(atlas,(i%4)*atlas.width/4,Math.floor(i/4)*atlas.height/4,atlas.width/4,atlas.height/4,0,0,96,96);sprites.push(c);}ready=true;$('#start-btn').disabled=false;$('#start-btn').textContent=saved?'Continue adventure':'Enter the hollow';spriteCSS();};
-atlas.onerror=()=>{$('#load-error').hidden=false;$('#start-btn').textContent='Reload artwork';$('#start-btn').disabled=false;$('#start-btn').onclick=()=>location.reload();};
-function resize(){const r=canvas.getBoundingClientRect();zoom=r.width<650?1.15:Math.min(1.65,Math.max(1.2,r.width/900));canvas.width=Math.round(r.width/zoom);canvas.height=Math.round(r.height/zoom);ctx.imageSmoothingEnabled=false;}
-window.addEventListener('resize',resize);resize();
-const floor=document.createElement('canvas');floor.width=MW*TILE;floor.height=MH*TILE;const f=floor.getContext('2d');
-function bakeFloor(){const rng=random(341);f.fillStyle='#10101a';f.fillRect(0,0,floor.width,floor.height);
- for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){
-  const t=game.map[y][x],px=x*TILE,py=y*TILE;if(t===0)continue;
-  if(t===3){f.fillStyle=(x+y)%4===0?'#16353b':'#153139';f.fillRect(px,py,TILE,TILE);for(let i=0;i<2;i++){f.fillStyle='#24464b';f.fillRect(px+rng()*26,py+rng()*29,3+rng()*9,1);}continue;}
-  f.fillStyle=t===1?'#293933':t===6?'#44372f':t===2?'#47453b':t===5?'#574238':x>59&&y>28?'#35483f':x>55?'#30323e':'#424745';f.fillRect(px,py,TILE,TILE);
-  if(t===2||t===4){for(let row=0;row<4;row++)for(let col=0;col<3;col++){const sx=px+col*12-(row%2)*6,sy=py+row*8;f.fillStyle=t===4?(x>59&&y>28?['#3d5149','#45594e','#34473e']:x>55?['#363a42','#3e4248','#30353c']:['#4c514c','#444c46','#51574f'])[Math.floor(rng()*3)]:['#504f43','#5a5749','#484a40'][Math.floor(rng()*3)];f.fillRect(Math.max(px,sx)+1,sy+1,Math.min(11,px+32-Math.max(px,sx)),6);f.fillStyle='#77786b25';f.fillRect(Math.max(px,sx)+2,sy+1,6,1);}}
-  if(t===1){for(let i=0;i<13;i++){const xx=px+Math.floor(rng()*31),yy=py+Math.floor(rng()*31);f.fillStyle=['#344a3b','#23382f','#3b4b3b','#415443'][Math.floor(rng()*4)];f.fillRect(xx,yy,1+rng()*3,1+rng()*3);}if(rng()<.15){f.fillStyle='#8a9a6577';f.fillRect(px+8,py+17,2,2);}}
-  if(t===5){f.fillStyle='#2b2828';f.fillRect(px,py,32,2);f.fillStyle='#866747';f.fillRect(px,py+3,32,2);for(let i=0;i<4;i++){f.fillStyle=i%2?'#705239':'#614a35';f.fillRect(px+1,py+7+i*6,30,5);}f.fillStyle='#b78c5e';f.fillRect(px+2,py+4,2,2);f.fillRect(px+28,py+4,2,2);}
-  if(t===6){for(let i=0;i<4;i++){f.fillStyle='#211f26';f.fillRect(px+4,py+5+i*7,24,2);f.fillStyle='#65513a';f.fillRect(px+4,py+7+i*7,24,1);}}
-  for(const [ox,oy] of [[0,-1],[-1,0],[1,0],[0,1]]){const n=game.map[y+oy]?.[x+ox];if(n===3||n===0){f.fillStyle='#172222';if(oy===1){f.fillRect(px,py+24,32,8);f.fillStyle='#62655a';f.fillRect(px,py+23,32,2);f.fillStyle='#38453e';f.fillRect(px+2,py+27,13,3);f.fillRect(px+18,py+28,12,3);}else if(oy===-1){f.fillRect(px,py,32,5);f.fillStyle='#626a58';f.fillRect(px,py+4,32,2);}else {f.fillRect(px+(ox===1?27:0),py,5,32);f.fillStyle='#556251';f.fillRect(px+(ox===1?26:5),py,1,32);}}}
+// Browser layer: input, camera, the frame loop, and turning model events into
+// sound, panels and effects. All rules live in core.mjs.
+import { Game, TILE, clamp, distance, ZONES, ENEMIES, SPELLS, SPELL_ORDER, WEAPONS } from './core.mjs';
+import * as R from './render.mjs';
+import * as UI from './ui.mjs';
+import * as A from './audio.mjs';
+
+const $ = s => document.querySelector(s);
+const canvas = $('#world'), ctx = canvas.getContext('2d'), panel = $('#panel');
+const SAVE_KEY = 'ashvale-adventure-v1';
+
+let saved = null;
+try { saved = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch {}
+let game = new Game(saved);
+let started = false, ready = false;
+let keys = new Set(), pointerDown = false, heavyDown = false, pointerAim = false;
+let last = 0, hudTimer = 0, saveTimer = 0, hitstop = 0, shake = 0, zoom = 1.5;
+let cam = { x:0, y:0 }, camInit = false, ghostTimer = 0;
+
+// -------------------------------------------------------------------- boot
+function uiApp(){
+ return {
+  get game(){ return game; },
+  started: () => started,
+  save,
+  flush: () => { events(); UI.updateHud(); },
+  clearInput: () => { keys.clear(); pointerDown = false; heavyDown = false; },
+  reset(){ game = new Game(); try{ localStorage.removeItem(SAVE_KEY); }catch{} R.clearFx(); UI.closePanel(); UI.updateHud(); UI.toast('A new arrival in Ashvale. Find Wren by the hearth.'); save(); }
+ };
+}
+UI.initUI(uiApp());
+
+R.loadAtlas('sprites.png', () => {
+ ready = true;
+ $('#start-btn').disabled = false;
+ $('#start-btn').textContent = saved ? 'Continue adventure' : 'Enter the hollow';
+ UI.spriteCSS();
+ UI.updateHud();
+}, () => {
+ $('#load-error').hidden = false;
+ $('#start-btn').textContent = 'Reload artwork';
+ $('#start-btn').disabled = false;
+ $('#start-btn').onclick = () => location.reload();
+});
+
+function resize(){
+ const r = canvas.getBoundingClientRect();
+ zoom = r.width < 650 ? 1.15 : Math.min(1.65, Math.max(1.2, r.width/900));
+ canvas.width = Math.round(r.width/zoom);
+ canvas.height = Math.round(r.height/zoom);
+ ctx.imageSmoothingEnabled = false;
+}
+window.addEventListener('resize', resize); resize();
+
+function save(){
+ try {
+  localStorage.setItem(SAVE_KEY, JSON.stringify(game.serialize()));
+  $('#save-status').textContent = 'Adventure saved';
+  setTimeout(() => $('#save-status').textContent = 'Local adventure', 1800);
+  return true;
+ } catch { $('#save-status').textContent = 'Saving unavailable'; return false; }
+}
+
+// ------------------------------------------------------------------ events
+function events(){
+ for(const e of game.events.splice(0)){
+  switch(e.type){
+   case 'toast': UI.toast(e.text); break;
+   case 'dialogue': UI.dialogue(e.npc); break;
+   case 'repair': UI.repairPanel(); break;
+   case 'hearth': UI.hearthPanel(); break;
+   case 'station': UI.station(e.station); break;
+   case 'board': UI.board(); break;
+   case 'victory': save(); chapterOne(); A.tone(440,1); A.tone(587.33,1.3,'sine',.03,.17); break;
+   case 'moonfen-complete': save(); chapterTwo(); break;
+   case 'hurt': shake = 3.4; A.sweep(160,70,.18,'sawtooth',.03); A.noise(.1,.03,600); break;
+   case 'shielded': A.tone(520,.2,'triangle',.03); break;
+   case 'attack': A.swingSound(game.weapon().kind, e.combo, e.heavy); break;
+   case 'impact': {
+    hitstop = e.heavy ? .085 : e.combo === game.swingSet().length-1 ? .065 : .028;
+    shake = e.heavy ? 4.2 : e.combo === game.swingSet().length-1 ? 3.2 : 1.3;
+    const p = game.player;
+    R.addFx('slash', { x:p.x + Math.cos(p.attackAngle)*34, y:p.y-20 + Math.sin(p.attackAngle)*34,
+     angle:p.attackAngle, color:game.weapon().trail, heavy:e.heavy, r:(game.currentSwing().range||80)*.6, life:.26 });
+    A.impactSound(e.heavy, e.combo, e.killed);
+    break; }
+   case 'stagger': A.tone(150,.3,'square',.028); break;
+   case 'shockwave': shake = Math.max(shake, 4); A.sweep(120,40,.4,'sine',.035); break;
+   case 'arc': R.addFx('arc', { x1:e.x1, y1:e.y1, x2:e.x2, y2:e.y2, life:.22 }); A.tone(880,.08,'square',.02); break;
+   case 'meteor': shake = Math.max(shake, 5); A.sweep(200,50,.5,'sawtooth',.04); break;
+   case 'slam': case 'enemy-slam': case 'erupt': shake = Math.max(shake, 4.5); A.sweep(110,38,.45,'sine',.035); break;
+   case 'telegraph': A.tone(330,.18,'triangle',.016); break;
+   case 'enemy-shot': A.tone(420,.12,'sawtooth',.016); break;
+   case 'blink': case 'summon': A.sweep(300,600,.22,'sine',.02); break;
+   case 'beacon-lit': save(); UI.banner('A light in the mist'); A.tone(660,.8); break;
+   case 'chop': A.noise(.06,.02,800); break;
+   case 'pickup': A.tone(580,.08,'sine',.018); break;
+   case 'spell': {
+    const s = SPELLS[e.id];
+    R.addFx('ring', { x:game.player.x, y:game.player.y, r:s.radius||120, color:s.color, life:.45 });
+    A.sweep(240, e.id === 'frost' ? 700 : 120, .45, e.id === 'bolt' ? 'square' : 'triangle', .035);
+    break; }
+   case 'super': {
+    shake = 6; hitstop = .09;
+    R.addFx('ring', { x:game.player.x, y:game.player.y, r:230, color:game.weapon().trail, life:.7 });
+    UI.banner(e.name, 'FOCUS');
+    A.sweep(120, 700, .6, 'sawtooth', .04); A.tone(880,.7,'triangle',.03,.1);
+    break; }
+   case 'perfect': A.tone(1200,.18,'sine',.028); break;
+   case 'dash': A.noise(.09,.02,2200); break;
+   case 'heal': A.tone(440,.4); break;
+   case 'craft': A.noise(.14,.04,500); A.tone(380,.3); save(); break;
+   case 'upgrade': A.noise(.2,.05,400); A.tone(300,.4,'triangle',.035); A.tone(450,.4,'triangle',.03,.12); save(); break;
+   case 'trade': A.tone(700,.12,'sine',.02); save(); break;
+   case 'chest': A.tone(520,.25,'triangle',.028); break;
+   case 'lamp': A.tone(760,.2,'sine',.022); break;
+   case 'level': UI.banner('Level ' + game.player.level); A.tone(660,.6); A.tone(880,.7,'sine',.025,.15); break;
+   case 'unlock': A.tone(520,.5,'triangle',.03); A.tone(780,.6,'triangle',.025,.16); save(); break;
+   case 'equip': save(); break;
+   case 'quest-start': UI.banner(e.title, 'NEW WORK'); A.tone(494,.4); save(); break;
+   case 'quest-step': A.tone(660,.2,'sine',.022); break;
+   case 'quest-done': questDone(e); break;
+   case 'bounty': A.tone(440,.3); save(); break;
+   case 'bounty-done': A.tone(700,.5); save(); break;
+   case 'boss-defeated': bossDown(e); break;
+   case 'boss-phase': shake = 5; UI.banner(e.name, 'PHASE ' + ['I','II','III'][e.phase]); A.sweep(90,300,.7,'sawtooth',.035); break;
+   case 'zone': arriveZone(e); break;
+   case 'respawn': save(); break;
+   case 'world-changed': break;
+  }
  }
- // Low timber railings protect the river crossing and garden.
- for(const row of [32.75,35.85])for(let x=38;x<45;x++){const px=x*TILE,py=row*TILE;f.fillStyle='#342529';f.fillRect(px,py-13,34,4);f.fillRect(px+1,py-20,5,25);f.fillStyle='#8b6250';f.fillRect(px+1,py-20,4,2);f.fillRect(px,py-13,32,1);}
- for(const [x,y] of [[17,29],[17,30],[17,31],[34,30],[34,31],[34,32],[14,39],[14,40],[14,41],[14,42]]){f.fillStyle='#432e31';f.fillRect(x*TILE,y*TILE-6,5,18);f.fillRect(x*TILE+2,y*TILE-4,31,3);f.fillRect(x*TILE+2,y*TILE+4,31,3);f.fillStyle='#8a6051';f.fillRect(x*TILE,y*TILE-7,5,2);}
 }
-bakeFloor();
-function shadow(x,y,w=20,h=7){ctx.fillStyle='#080c1690';ctx.beginPath();ctx.ellipse(x,y,w,h,0,0,Math.PI*2);ctx.fill();}
-function drawSprite(i,x,y,w,h,opts={}){if(!sprites[i])return;ctx.save();ctx.globalAlpha=opts.alpha??1;if(opts.hit)ctx.filter='brightness(1.6)';else if(opts.dark)ctx.filter='brightness(.48) saturate(.5)';else if(opts.fire)ctx.filter='hue-rotate(125deg) saturate(1.5) brightness(1.3)';else if(opts.purple)ctx.filter='hue-rotate(75deg) saturate(.6)';ctx.translate(Math.round(x),Math.round(y));ctx.rotate(opts.rotation||0);ctx.drawImage(sprites[i],Math.round(-w/2),Math.round(-h*.89),w,h);ctx.restore();}
-function glow(x,y,r,color){const g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'#ffae4800');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2);}
-function drawObject(o,t){const {x,y,type}=o;if(type==='beacon'){ctx.strokeStyle=game.flags['beacon'+o.index]?'#dabe7955':'#7d91a744';ctx.lineWidth=1;ctx.beginPath();ctx.ellipse(x,y,38,18,0,0,Math.PI*2);ctx.stroke();}if(type==='plot'){if(o.growing>0||o.ripe){drawSprite(15,x,y, o.ripe?29:18,o.ripe?28:18,{alpha:o.ripe?1:.7});}return;}
- const [w,h]=sizes[type];shadow(x,y,w*.28,h*.07);let i=sprMap[type];if(type==='ruin'&&game.flags.cottage)i=8;
- let bob=o.hit?Math.sin(o.hit*70)*3:0;drawSprite(i,x+bob,y,w,h,{hit:o.hit>0,dark:type==='hearth'&&!game.flags.hearth||type==='beacon'&&!game.flags['beacon'+o.index]});
- if(type==='beacon'){ctx.font='11px Georgia';ctx.textAlign='center';ctx.fillStyle=game.flags['beacon'+o.index]?'#f2d399':'#b5aec5';ctx.fillText(['Dawn beacon','Mist beacon','Dusk beacon'][o.index],x,y-h-5);}
- if(type==='npc'){ctx.fillStyle='#e9c880';ctx.font='bold 14px Georgia';ctx.textAlign='center';ctx.fillText(game.flags.met?'◇':'!',x,y-h-5+Math.sin(t*3)*2);}
- if(type==='chest'){ctx.fillStyle='#deb983';ctx.globalAlpha=.5+Math.sin(t*3+o.x)*.4;ctx.fillRect(x+15,y-29,2,2);ctx.globalAlpha=1;}
+function arriveZone(e){
+ R.clearFx();
+ R.bakeZone(game, e.zone);
+ camInit = false;
+ A.setTheme(ZONES[e.zone].music);
+ UI.banner(e.name, e.sub);
+ UI.updateHud();
+ save();
+ if(e.first) UI.toast('New region discovered · ' + e.name);
 }
-function drawSwing(p,phase){
- const style=p.combo,impact=SWINGS[style].impact/p.attackDuration;
- const wind=phase<impact,progress=clamp((phase-impact)/(1-impact),0,1),ease=1-Math.pow(1-progress,3);
- const angle=style===0?(-1.35+ease*2.65):style===1?(1.5-ease*2.9):(-1.7+ease*1.95);
- const radius=style===2?62:style===1?51:47,color=style===1?'#b8f1e3':style===2?'#ffe4a1':'#f7cd92';
- ctx.save();ctx.translate(p.x,p.y-19);ctx.rotate(p.attackAngle);ctx.scale(1,.8);
- if(!wind){
-  for(let i=5;i>=0;i--){ctx.globalAlpha=(1-progress)*(.07+i*.025);ctx.strokeStyle=color;ctx.lineWidth=style===2?12-i:8-i*.6;ctx.beginPath();const a=angle+(style===1?1:-1)*(.13+i*.1);ctx.arc(0,0,radius-i*1.7,Math.min(a,angle),Math.max(a,angle));ctx.stroke();}
-  if(style===2&&progress<.6){ctx.globalAlpha=(.6-progress)*.7;ctx.strokeStyle='#ffc677';ctx.lineWidth=3;ctx.beginPath();ctx.ellipse(48,8,18+progress*55,12+progress*35,0,0,Math.PI*2);ctx.stroke();}
+function questDone(e){
+ UI.banner(e.title, 'COMPLETE');
+ A.tone(587,.5); A.tone(784,.7,'sine',.028,.16);
+ save();
+ if(e.id === 'q-deep') ending();
+}
+function bossDown(e){
+ shake = 8; hitstop = .2;
+ UI.banner(e.name + ' falls', 'VICTORY');
+ A.sweep(300,60,1.1,'sawtooth',.045); A.tone(523,1,'sine',.03,.3); A.tone(784,1.2,'sine',.025,.5);
+ save();
+ if(e.type === 'bramble') UI.chapterPanel('WHISPERWOOD DEEP','The Bramble Warden','The wood can breathe again.',
+  ['It was a guardian once. Something in the ground under it went wrong,','and it spent a hundred years strangling the thing it was made to protect.','In its heart, a seed — still warm.'],
+  ['Heartwood Seed recovered','Rootcleaver pattern available from Dain'],'Take the seed to Nima');
+ if(e.type === 'devourer') UI.chapterPanel('THE SUNKEN WARRENS','The Warren Devourer','It was digging upward.',
+  ['Eleven days Gormel counted in the dark, and you ended it in an afternoon.','The tunnels it made go down further than any mine.','Something down there was telling it where to dig.'],
+  ['Moonsteel recovered','Gormel walks out behind you'],'Get him to the surface');
+ if(e.type === 'choirlord') UI.chapterPanel('THE ASHEN CRYPT','The Ashen Choirmaster','The singing stops.',
+  ['Twelve names on the wall. Twelve people who walked down here believing','the fire under the world wanted them.','It did. That is the part nobody in Hearthgate wants to hear.'],
+  ['Ashen cloak taken from the altar','Relic recovered'],'Climb back into the light');
+}
+function chapterOne(){
+ UI.chapterPanel('CHAPTER I COMPLETE','A light in the hollow','Ashvale has a heartbeat again.',
+  ['The workshop stands. The roots are quiet.','And in the hollow, a small fire refuses to go out.'],
+  [`Level ${game.player.level}`, `${game.player.kills} creatures defeated`, `${Math.floor(game.time/60)} minutes adventured`],
+  'On to the Moonfen');
+}
+function chapterTwo(){
+ UI.chapterPanel('CHAPTER II COMPLETE','A brighter horizon','Three beacons. One way home.',
+  ['The Moonfen no longer belongs to the mist.','Warm light traces a road back to Ashvale — and west, past the hollow,','a road nobody has walked in two months. Hearthgate is out there.'],
+  ['Hearthblade blessing · +8 attack','Faster stamina recovery','3 healing tonics'],
+  'Take the west road');
+ A.tone(587,.8);
+}
+function ending(){
+ UI.chapterPanel('THE LAST LIGHT','The fire beneath','It was a hearth before it was a throne.',
+  ['You walked into the fire under the world and you walked back out of it.',
+   'Ashvale is lit. Hearthgate’s gates stand open at night now, which the watch',
+   'still finds unnerving. Wren keeps a chair by the fire that nobody else sits in.',
+   'The road is open, both ways, for as long as somebody keeps the light.'],
+  [`Level ${game.player.level}`, `${game.player.kills} defeated`,
+   `${Object.values(game.quests).filter(q=>q.state==='done').length} quests completed`,
+   `${Math.floor(game.time/60)} minutes in Ashvale`],
+  'Keep the light');
+}
+
+// ------------------------------------------------------------------- input
+function action(name, ...args){
+ if(!started || panel.open) return;
+ game[name]?.(...args);
+ events(); UI.updateHud();
+ canvas.focus({ preventScroll:true });
+}
+function cycleSpell(dir = 1){
+ const owned = SPELL_ORDER.filter(id => game.spells[id]);
+ if(owned.length < 2) return;
+ const i = owned.indexOf(game.gear.spell);
+ game.equip('spell', owned[(i + dir + owned.length) % owned.length]);
+ UI.toast('Prepared · ' + game.spellDef().name);
+ events(); UI.updateHud();
+}
+
+$('#start-btn').onclick = () => {
+ if(!ready) return;
+ started = true;
+ $('#start-screen').remove();
+ canvas.focus({ preventScroll:true });
+ R.bakeZone(game);
+ A.setTheme(ZONES[game.zone].music);
+ UI.banner(ZONES[game.zone].name, ZONES[game.zone].sub);
+ UI.toast(saved ? 'Welcome back to the hollow.' : 'Find Wren near the hearth. WASD to move · E to speak.');
+ UI.updateHud();
+};
+$('#close-panel').onclick = UI.closePanel;
+panel.addEventListener('cancel', () => { keys.clear(); pointerDown = false; heavyDown = false; });
+panel.addEventListener('close', () => { keys.clear(); pointerDown = false; heavyDown = false; canvas.focus({ preventScroll:true }); });
+panel.addEventListener('click', e => {
+ if(e.target !== panel) return;
+ const r = panel.getBoundingClientRect();
+ if(e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) UI.closePanel();
+});
+$('#inventory-btn').onclick = () => started && UI.pack();
+$('#journal-btn').onclick = () => started && UI.journal();
+$('#map-btn').onclick = () => started && UI.mapPanel();
+$('#menu-btn').onclick = () => started && UI.pause();
+$('#help-btn').onclick = UI.help;
+$('#sound-btn').onclick = () => {
+ const on = A.toggle();
+ $('#sound-btn span').textContent = on ? 'Sound on' : 'Sound off';
+ $('#sound-btn').setAttribute('aria-label', on ? 'Disable sound' : 'Enable sound');
+};
+$('#touch-interact').onclick = () => action('interact');
+document.querySelectorAll('[data-action]').forEach(b => b.onclick = () => {
+ const a = b.dataset.action;
+ if(a === 'heavy') action('heavyAttack');
+ else if(a === 'super') action('useSuper');
+ else if(a === 'spell') action('cast');
+ else action(a);
+});
+$('#spell-cycle')?.addEventListener('click', () => started && !panel.open && cycleSpell(1));
+
+const HELD = [' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','z','x','q','r','e','f','c'];
+window.addEventListener('keydown', e => {
+ if(!started || panel.open){
+  if(panel.open && e.key === 'Escape') return;
+  return;
  }
- ctx.globalAlpha=wind?.5:Math.min(1,(1-progress)*3);ctx.rotate(wind?(style===1?1.5:-1.7):angle);
- ctx.fillStyle='#b38b5d';ctx.fillRect(6,-3,15,6);ctx.fillStyle='#ebba75';ctx.fillRect(19,-9,4,18);
- ctx.fillStyle=color;ctx.beginPath();ctx.moveTo(23,-4);ctx.lineTo(radius+14,0);ctx.lineTo(23,4);ctx.closePath();ctx.fill();ctx.strokeStyle='#fff5d8';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(23,0);ctx.lineTo(radius+13,0);ctx.stroke();ctx.restore();
+ const key = e.key.toLowerCase();
+ if(HELD.includes(key)) e.preventDefault();
+ if(e.repeat) return;
+ keys.add(key);
+ if(key === 'z') action('attack');
+ else if(key === 'x') action('heavyAttack');
+ else if(key === 'e') action('interact');
+ else if(key === 'q') action('cast');
+ else if(key === 'f') action('useSuper');
+ else if(key === 'c') cycleSpell(1);
+ else if(key === 'r') action('heal');
+ else if(key === ' ') action('dash');
+ else if(key === 'i') UI.pack();
+ else if(key === 'l') UI.journal();
+ else if(key === 'm') UI.mapPanel();
+ else if(key === 'escape') UI.pause();
+ else if(key === '?' || key === 'h') UI.help();
+});
+window.addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur', () => { keys.clear(); pointerDown = false; heavyDown = false; });
+document.addEventListener('visibilitychange', () => { keys.clear(); pointerDown = false; heavyDown = false; if(started) save(); });
+window.addEventListener('pagehide', () => { if(started) save(); });
+
+function aimAt(e){
+ const r = canvas.getBoundingClientRect();
+ game.player.angle = Math.atan2((e.clientY-r.top)/zoom + cam.y - game.player.y, (e.clientX-r.left)/zoom + cam.x - game.player.x);
+ game.player.aiming = true; pointerAim = true;
 }
-function moonfenVictory(){openPanel('A brighter horizon','CHAPTER II COMPLETE',`<h3 class="win">Three beacons. One way home.</h3><p>The Moonfen no longer belongs to the mist. Warm light traces a road back to Ashvale.</p><div class="stats"><span>Hearthblade blessing · +8 attack</span><span>Faster stamina recovery</span><span>3 healing tonics</span></div><p>The blessing strengthens every swing, including your sundering cleave. Your progress is saved.</p><button class="primary" id="moonfen-done">Carry the light</button>`);$('#moonfen-done').onclick=closePanel;tone(587,.8);}
-function render(now){const t=now/1000,p=game.player,cw=canvas.width,ch=canvas.height;cam.x=clamp(p.x-cw/2,0,floor.width-cw);cam.y=clamp(p.y-ch*.54,0,floor.height-ch);ctx.clearRect(0,0,cw,ch);ctx.save();ctx.translate(-Math.round(cam.x)+(shake?Math.sin(t*130)*shake:0),-Math.round(cam.y));ctx.drawImage(floor,0,0);
- // Slow water glints; no scene-wide image is used as the playfield.
- const x0=Math.floor(cam.x/TILE),y0=Math.floor(cam.y/TILE);for(let y=y0;y<y0+ch/TILE+1;y++)for(let x=x0;x<x0+cw/TILE+1;x++)if(game.map[y]?.[x]===3){const a=.09+Math.sin(t*1.3+x*2+y)*.06;ctx.fillStyle=`rgba(127,184,177,${a})`;ctx.fillRect(x*TILE+6+Math.sin(t+x)*4,y*TILE+14,11,1);}
- const visible=game.objects.filter(o=>!game.removed.has(o.id)&&o.x>cam.x-160&&o.x<cam.x+cw+160&&o.y>cam.y-20&&o.y<cam.y+ch+190);
- const ents=[...visible.map(o=>({kind:'object',...o})),...game.enemies.filter(e=>e.hp>0).map(e=>({kind:'enemy',...e})),{kind:'player',x:p.x,y:p.y}].sort((a,b)=>a.y-b.y);
- for(const e of ents){if(e.kind==='object'){drawObject(e,t);continue;}if(e.kind==='player'){shadow(p.x,p.y,14,5);const bob=p.moving?Math.sin(t*15)*2:Math.sin(t*2)*.5;
- const swinging=p.attack>0,phase=swinging?1-p.attack/p.attackDuration:0,drive=swinging?Math.sin(phase*Math.PI)*(p.combo===2?13:7):0;
- const lean=swinging?Math.sin(phase*Math.PI)*(p.combo===1?-.15:.12):0;
- drawSprite(p.dir,p.x+Math.cos(p.attackAngle)*drive,p.y+bob+Math.sin(p.attackAngle)*drive,57,65,{alpha:p.invincible>0&&Math.floor(t*12)%2===0?.45:1,rotation:lean});
- if(swinging)drawSwing(p,phase);
- if(p.dash>0){ctx.strokeStyle='#a5ded970';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(p.x,p.y-20);ctx.lineTo(p.x-Math.cos(p.angle)*45,p.y-20-Math.sin(p.angle)*45);ctx.stroke();}}
-  else{if(e.type==='wisp'){
- const floatY=e.y-15+Math.sin(t*4+e.phase)*5;shadow(e.x,e.y,15,5);glow(e.x,floatY-20,e.cast>0?56:36,e.cast>0?'#ff995855':'#dc85402a');drawSprite(13,e.x,floatY,54,49,{fire:true,hit:e.hit>0});
- if(e.cast>0){ctx.save();ctx.translate(e.x,floatY-18);ctx.rotate(e.aim);ctx.strokeStyle='#ffb77a';ctx.setLineDash([4,5]);ctx.beginPath();ctx.moveTo(20,0);ctx.lineTo(140,0);ctx.stroke();ctx.restore();}
- if(e.hp<e.maxHp){ctx.fillStyle='#251b2a';ctx.fillRect(e.x-22,floatY-48,44,4);ctx.fillStyle='#edb677';ctx.fillRect(e.x-21,floatY-47,42*e.hp/e.maxHp,2);}continue;
- }const boss=e.type==='guardian',bat=e.type==='bat';shadow(e.x,e.y,boss?33:bat?12:19,boss?10:5);if(boss&&e.windup>0){ctx.strokeStyle='#e08a65';ctx.fillStyle='#d77d4430';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(e.x,e.y,120,75,0,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle='#ffd1a1';ctx.font='11px Arial';ctx.textAlign='center';ctx.fillText('DODGE',e.x,e.y-100);}drawSprite(bat?13:12,e.x,e.y+(bat?-14+Math.sin(t*10+e.phase)*5:Math.sin(t*5+e.phase)*2),boss?112:bat?49:48,boss?98:bat?43:43,{hit:e.hit>0,purple:boss});if(e.hp<e.maxHp||boss&&distance(e,p)<350){const w=boss?90:31;ctx.fillStyle='#211723';ctx.fillRect(e.x-w/2,e.y-(boss?95:47),w,5);ctx.fillStyle=boss?'#d08b73':'#b35e79';ctx.fillRect(e.x-w/2+1,e.y-(boss?94:46),(w-2)*Math.max(0,e.hp/e.maxHp),3);if(boss){ctx.font='10px Georgia';ctx.fillStyle='#dfbda5';ctx.textAlign='center';ctx.fillText('THE ROOTBOUND',e.x,e.y-103);}}}
+canvas.addEventListener('pointerdown', e => {
+ if(!started || panel.open || e.pointerType === 'touch') return;
+ canvas.setPointerCapture(e.pointerId);
+ aimAt(e);
+ if(e.button === 2){ heavyDown = true; action('heavyAttack'); }
+ else { pointerDown = true; action('attack'); }
+});
+canvas.addEventListener('pointermove', e => { if(pointerDown || heavyDown) aimAt(e); });
+canvas.addEventListener('pointerup', () => { pointerDown = false; heavyDown = false; setTimeout(() => { if(!pointerDown && !heavyDown){ pointerAim = false; game.player.aiming = false; } }, 400); });
+canvas.addEventListener('pointercancel', () => { pointerDown = false; heavyDown = false; });
+canvas.addEventListener('contextmenu', e => e.preventDefault());
+document.querySelectorAll('[data-key]').forEach(b => {
+ b.addEventListener('pointerdown', e => { e.preventDefault(); b.setPointerCapture(e.pointerId); keys.add(b.dataset.key.toLowerCase()); });
+ for(const name of ['pointerup','pointercancel','lostpointercapture']) b.addEventListener(name, () => keys.delete(b.dataset.key.toLowerCase()));
+});
+
+// -------------------------------------------------------------------- loop
+function loop(now){
+ let dt = Math.min((now-last)/1000 || .016, .035);
+ last = now;
+ const t = now/1000;
+ if(started && !panel.open && !document.hidden){
+  const x = (keys.has('d')||keys.has('arrowright')?1:0) - (keys.has('a')||keys.has('arrowleft')?1:0);
+  const y = (keys.has('s')||keys.has('arrowdown')?1:0) - (keys.has('w')||keys.has('arrowup')?1:0);
+  if(hitstop > 0) hitstop = Math.max(0, hitstop - dt);
+  else {
+   const scale = game.slowmo > 0 ? .34 : 1;
+   game.update(dt*scale, { x, y, attack: keys.has('z') || pointerDown, aim: pointerAim });
+   // Dash afterimages, drawn from whatever the player is wearing.
+   if(game.player.dash > 0){
+    ghostTimer -= dt;
+    if(ghostTimer <= 0){ ghostTimer = .035; R.addFx('ghost', { x:game.player.x, y:game.player.y, sprite:R.playerSprite(game), life:.24 }); }
+   }
+  }
+  events();
+  saveTimer += dt;
+  if(saveTimer > 15){ save(); saveTimer = 0; }
  }
- for(const o of visible){if(o.type==='beacon'&&game.flags['beacon'+o.index])glow(o.x,o.y-73,145,'#a7cbaa35');if(o.type==='lamp')glow(o.x,o.y-46,83,'#efaa3c26');if(o.type==='cottage'||o.type==='ruin'&&game.flags.cottage)glow(o.x,o.y-37,65,'#efac3920');if(o.type==='hearth'&&game.flags.hearth){glow(o.x,o.y-18,140,'#ffac5540');if(Math.sin(t*14)>.1){ctx.fillStyle='#efbf70';ctx.fillRect(o.x+Math.sin(t*7)*10,o.y-30-(t*13%30),2,2);}}}
- for(const bolt of game.projectiles){glow(bolt.x,bolt.y-18,22,'#ff8f4555');ctx.fillStyle='#fff1b5';ctx.beginPath();ctx.arc(bolt.x,bolt.y-18,4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#f1a566';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(bolt.x,bolt.y-18);ctx.lineTo(bolt.x-bolt.vx*.07,bolt.y-18-bolt.vy*.07);ctx.stroke();}
- for(const a of game.particles){ctx.globalAlpha=Math.min(1,a.life*2);ctx.fillStyle=a.color;ctx.fillRect(a.x,a.y,a.size,a.size);}ctx.globalAlpha=1;
- for(let i=0;i<25;i++){const x=cam.x+((i*97.1+t*6)%(cw+30)),y=cam.y+(i*67.8%ch)+Math.sin(t+i)*9;ctx.fillStyle=`rgba(179,191,134,${.15+Math.sin(t*2+i)*.13})`;ctx.fillRect(x,y,1.5,1.5);}
- for(const a of game.texts){ctx.globalAlpha=Math.min(1,a.life);ctx.font='bold 11px Arial';ctx.textAlign='center';ctx.fillStyle='#17131d';ctx.fillText(a.text,a.x+1,a.y+1);ctx.fillStyle=a.color;ctx.fillText(a.text,a.x,a.y);}ctx.globalAlpha=1;ctx.restore();
- const near=game.nearest(),prompt=$('#interact-prompt');if(started&&!panel.open&&near){const names={beacon:game.flags['beacon'+near.index]?'Rest at beacon':'Light beacon · 2 ember dust',npc:'Speak to Wren',hearth:game.flags.hearth?'Rest at the hearth':'Examine the hearth',ruin:game.flags.cottage?'Visit the workshop':'Restore the workshop',cottage:'Rest at the Lantern Inn',chest:'Open supply cache',herb:'Gather moonleaf',arch:'Enter the Rootvault',plot:near.ripe?'Harvest moonleaf':near.growing?'Check moonleaf':'Plant moonleaf'};prompt.style.display='block';prompt.querySelector('span').textContent=names[near.type];prompt.style.left=clamp((near.x-cam.x)/cw*100,20,80)+'%';prompt.style.top=clamp((near.y-cam.y+22)/ch*100,30,76)+'%';}else prompt.style.display='none';
+ R.stepFx(dt);
+ shake = Math.max(0, shake - dt*18);
+
+ // Camera: follow with a little lead in the direction you are facing.
+ const p = game.player, cw = canvas.width, ch = canvas.height;
+ const def = ZONES[game.zone], fw = def.w*TILE, fh = def.h*TILE;
+ const leadX = Math.cos(p.angle)*34, leadY = Math.sin(p.angle)*24;
+ const tx = clamp(p.x + leadX - cw/2, 0, Math.max(0, fw-cw));
+ const ty = clamp(p.y + leadY - ch*.54, 0, Math.max(0, fh-ch));
+ if(!camInit){ cam.x = tx; cam.y = ty; camInit = true; }
+ else { const k = Math.min(1, dt*7.5); cam.x += (tx-cam.x)*k; cam.y += (ty-cam.y)*k; }
+
+ R.renderScene(ctx, game, cam, cw, ch, t, { shake });
+ prompt(cw, ch);
+
+ hudTimer += dt;
+ if(hudTimer > .12){ UI.updateHud(); hudTimer = 0; }
+ requestAnimationFrame(loop);
 }
-function mapDraw(target,big=false){const c=target.getContext('2d'),sx=target.width/MW,sy=target.height/MH;c.fillStyle='#141820';c.fillRect(0,0,target.width,target.height);for(let y=0;y<MH;y++)for(let x=0;x<MW;x++){c.fillStyle=['#14141e','#365549','#766b50','#203f48','#5c5c5b','#987459','#725642'][game.map[y][x]];c.fillRect(x*sx,y*sy,Math.ceil(sx),Math.ceil(sy));}const mark=(x,y,col,r)=>{c.fillStyle=col;c.beginPath();c.arc(x/TILE*sx,y/TILE*sy,r,0,7);c.fill();};game.objects.filter(o=>['hearth','npc','ruin','arch','beacon'].includes(o.type)).forEach(o=>mark(o.x,o.y,o.type==='arch'?'#bf869a':'#ddb67d',big?4:2));if(!game.flags.boss)mark(69*TILE,12*TILE,'#d77486',big?5:2);mark(game.player.x,game.player.y,'#f8eace',big?5:3);if(big){c.font='13px Georgia';c.textAlign='center';c.fillStyle='#f0e0bd';c.fillText('ASHVALE',24*sx,48*sy);c.fillText('WHISPERWOOD',50*sx,40*sy);c.fillText('THE ROOTVAULT',66*sx,27*sy);c.fillText('THE MOONFEN',68*sx,55*sy);}}
-function toast(text){const el=document.createElement('div');el.className='toast';el.textContent=text;$('#toasts').append(el);while($('#toasts').children.length>4)$('#toasts').firstChild.remove();setTimeout(()=>el.remove(),4200);}
-function banner(text){$('#area-banner').textContent=text;$('#area-banner').style.opacity=1;setTimeout(()=>$('#area-banner').style.opacity=0,3000);}
-let previousArea='';
-function updateHud(){const p=game.player;$('#health-fill').style.width=p.hp/p.maxHp*100+'%';$('#health-label').textContent=`${Math.ceil(p.hp)} / ${p.maxHp}`;$('#stamina-fill').style.width=p.stamina+'%';$('#xp-fill').style.width=p.xp/(p.level*70)*100+'%';$('#level').textContent=p.level;$('#level-text').textContent='Level '+p.level;$('#potion-count').textContent=game.bag.potion;$('#spell-cooldown').style.height=p.spell/3*100+'%';$('#resource-summary').textContent=`${game.bag.wood} timber · ${game.bag.stone} stone`;
- let title,detail,progress='';if(!game.flags.met){title='Find the hearthkeeper';detail='Speak to Wren by the village hearth.';}else if(!game.flags.cottage){title='A place to begin again';detail='Gather supplies. Restore the ruined workshop northeast of the hearth.';progress=`${game.bag.wood>=12?'✓':'◇'} Timber ${Math.min(game.bag.wood,12)} / 12<br>${game.bag.stone>=8?'✓':'◇'} Stone ${Math.min(game.bag.stone,8)} / 8`;}else if(!game.flags.boss){title='Beneath the old roots';detail='Cross the eastern bridge. Follow the path north into the Rootvault.';progress='◇ Defeat the Rootbound guardian';}else if(!game.flags.hearth){title='Bring the light home';detail='Return the Heart Spark to the village hearth.';progress='✓ Heart Spark recovered';}else if(!game.flags.beacons){title='The lights beyond';detail='Continue east past the bridge into the Moonfen. Clear the wisps and light all three beacons.';progress=[0,1,2].map(i=>(game.flags['beacon'+i]?'✓ ':'◇ ')+['Dawn beacon','Mist beacon','Dusk beacon'][i]).join('<br>');}else{title='A brighter horizon';detail='The Moonfen beacons shine. Hearthblade blessing: +8 attack and faster stamina recovery.';progress='✓ Chapters I & II complete';}$('#quest-title').textContent=title;$('#quest-detail').textContent=detail;$('#quest-progress').innerHTML=progress;
- const area=p.x>59*TILE&&p.y>28*TILE?'The Moonfen':p.x>56*TILE&&p.y<27*TILE?'The Rootvault':p.x>43*TILE?'Whisperwood':'Ashvale Hollow';$('#location').textContent=area;$('#location-sub').textContent=area==='The Moonfen'?'Three lost lights in a sea of mist':area==='The Rootvault'?'Something stirs beneath the roots':area==='Whisperwood'?'Beyond the lantern light':game.flags.hearth?'A spark becomes a home':'A quiet place, waiting for a spark';if(area!==previousArea){if(previousArea&&started)banner(area);previousArea=area;}mapDraw($('#minimap'));const combo=$('#combo-readout');combo.classList.toggle('visible',p.comboTimer>0);combo.innerHTML=`<span>${[0,1,2].map(i=>`<i class="${i<=p.combo?'lit':''}"></i>`).join('')}</span> ${SWINGS[p.combo].name}${p.combo===2?' · FINISHER':''}`;$('.chapter').innerHTML=game.flags.hearth?'THE LIGHTS BEYOND <span> / </span> CHAPTER II':'THE HOLLOW WAKES <span> / </span> CHAPTER I';}
-function save(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(game.serialize()));$('#save-status').textContent='Adventure saved';setTimeout(()=>$('#save-status').textContent='Local adventure',1800);return true;}catch{$('#save-status').textContent='Saving unavailable';return false;}}
-function tone(freq=220,duration=.12,type='sine',gain=.03){if(!sound||!audio)return;const o=audio.createOscillator(),g=audio.createGain();o.type=type;o.frequency.setValueAtTime(freq,audio.currentTime);g.gain.setValueAtTime(gain,audio.currentTime);g.gain.exponentialRampToValueAtTime(.001,audio.currentTime+duration);o.connect(g);g.connect(audio.destination);o.start();o.stop(audio.currentTime+duration);}
-function setSound(){sound=!sound;if(sound){try{audio??=new(window.AudioContext||window.webkitAudioContext)();audio.resume();let step=0;const notes=[146.83,220,293.66,261.63,196,220,174.61,130.81];melodyTimer=setInterval(()=>{if(!document.hidden){tone(notes[step++%notes.length],2.4,'sine',.022);tone(73.42,3,'sine',.012);}},1600);tone(293.66,.5);}catch{sound=false;}}else clearInterval(melodyTimer);$('#sound-btn span').textContent=sound?'Sound on':'Sound off';$('#sound-btn').setAttribute('aria-label',sound?'Disable sound':'Enable sound');}
-function events(){for(const e of game.events.splice(0)){switch(e.type){case'toast':toast(e.text);break;case'dialogue':dialogue();break;case'repair':repairPanel();break;case'hearth':hearthPanel();break;case'victory':save();victory();tone(440,1);setTimeout(()=>tone(587.33,1.3),170);break;case'hurt':shake=3;tone(90,.16,'sawtooth',.028);break;case'attack':tone([190,270,120][e.combo],e.combo===2?.2:.1,e.combo===2?'sawtooth':'triangle',.023);break;case'impact':hitstop=e.combo===2?.065:.025;shake=e.combo===2?3.2:1.2;tone(e.combo===2?68:115,.12,'triangle',.034);break;case'beacon-lit':save();banner('A light in the mist');tone(660,.8);break;case'moonfen-complete':save();moonfenVictory();break;case'chop':tone(95,.06,'square',.014);break;case'pickup':tone(580,.08,'sine',.018);break;case'spell':tone(310,.5,'triangle',.04);break;case'dash':tone(190,.1,'sine',.02);break;case'heal':tone(440,.4);break;case'craft':tone(380,.3);save();break;case'level':banner('Level '+game.player.level);tone(660,.6);break;case'boss-defeated':banner('Heart Spark recovered');save();break;case'respawn':save();break;}}
+function prompt(cw, ch){
+ const el = $('#interact-prompt');
+ const near = started && !panel.open ? game.nearest() : null;
+ if(!near){ el.style.display = 'none'; return; }
+ el.style.display = 'block';
+ el.querySelector('span').textContent = game.promptFor(near);
+ el.style.left = clamp((near.x-cam.x)/cw*100, 18, 82) + '%';
+ el.style.top = clamp((near.y-cam.y+22)/ch*100, 26, 78) + '%';
 }
-function action(name){if(!started||panel.open)return;game[name]?.();events();updateHud();canvas.focus({preventScroll:true});}
-function openPanel(title,eyebrow,html){lastPanelFocus=document.activeElement;$('#panel-title').textContent=title;$('#panel-eyebrow').textContent=eyebrow;$('#panel-content').innerHTML=html;keys.clear();pointerDown=false;if(!panel.open)panel.showModal();spriteCSS();}
-function closePanel(){panel.close();if(started)canvas.focus({preventScroll:true});else lastPanelFocus?.focus();}
-function art(i){return `<span class="sprite item-art" data-sprite="${i}"></span>`;}
-function inventory(){const b=game.bag,p=game.player;openPanel('The wayfarer’s pack','INVENTORY & CRAFTING',`<div class="stats"><span>Level ${p.level}</span><span>Attack ${17+(game.flags.upgrade?7:0)+(game.flags.beacons?8:0)+(p.level-1)*3}</span><span>${p.kills} creatures defeated</span></div><div class="inventory-grid"><div class="item-card">${art(4)}<b>Timber</b><strong>${b.wood}</strong></div><div class="item-card">${art(5)}<b>Stone</b><strong>${b.stone}</strong></div><div class="item-card">${art(15)}<b>Moonleaf</b><strong>${b.herb}</strong></div><div class="item-card">${art(10)}<b>Ember dust</b><strong>${b.essence}</strong></div></div><p>You carry <b>${b.potion} healing tonics</b>${b.core?' and the <span class="win">Heart Spark</span>':''}.</p>${game.flags.beacons?'<p class="win">Hearthblade blessing · +8 attack, faster stamina recovery.</p>':''}<h3>At the workbench</h3><div class="recipe"><div><h4>Healing tonic</h4><p>Restores 65 health · 2 moonleaf</p></div><button data-craft="tonic" ${b.herb<2?'disabled':''}>Craft tonic</button></div><div class="recipe"><div><h4>Tempered blade</h4><p>+7 attack · 6 timber, 4 stone, 4 ember dust</p></div><button data-craft="blade" ${game.flags.upgrade||b.wood<6||b.stone<4||b.essence<4?'disabled':''}>${game.flags.upgrade?'Equipped':'Forge blade'}</button></div><p class="muted">Chop trees and break ore with your sword. Harvest moonleaf, or grow it in the garden south of the hearth. Creatures drop ember dust.</p>`);document.querySelectorAll('[data-craft]').forEach(b=>b.onclick=()=>{game.craft(b.dataset.craft);events();inventory();});}
-function journal(){const f=game.flags;openPanel('A light in the hollow','QUEST JOURNAL',`<p>There used to be a light in every window. Wren believes there can be again.</p>${[['Meet the hearthkeeper','Speak to Wren, just north of the village hearth.',f.met],['Rebuild the workshop','Bring 12 timber and 8 stone to the ruined building northeast of the hearth. Trees and ore yield materials when struck with your sword.',f.cottage],['Recover the Heart Spark','Cross the bridge east of the village. Follow the path north, then east into the Rootvault. Defeat the Rootbound. Watch for its glowing attack circle and dodge away.',f.boss],['Rekindle the hearth','Bring the Heart Spark home. The restored workshop provides the tools you need to mend the hearth.',f.hearth],['The lights beyond · Chapter II','After restoring the hearth, continue east into the Moonfen. Defeat nearby cinder wisps, then bring 2 ember dust to each of its three beacons. Dodge their aimed firebolts. Reward: Hearthblade blessing (+8 attack, faster stamina recovery) and three tonics.',f.beacons]].map(([t,d,done],i)=>`<div class="journal-entry ${done?'done':''}"><div class="tag">${done?'✓ COMPLETE':'0'+(i+1)}</div><h3>${t}</h3><p>${d}</p></div>`).join('')}`);}
-function dialogue(){const f=game.flags;let line=!f.cottage?'“A village isn’t its stones, stranger. It’s the people willing to put them back. Help me mend the workshop, and we might yet bring a little warmth to this hollow.”':!f.boss?'“There’s a spark under the old roots. The creature that swallowed it won’t give it up easily. Cross our eastern bridge and follow the northward path. Take a tonic or two.”':!f.hearth?'“You found it. I can feel the warmth from here. Bring it to the hearth. Let’s give this place a tomorrow.”':!f.beacons?'“Our fire is only the beginning. Three beacons once guided travelers through the Moonfen. Take our light east, clear the cinder wisps, and feed each lantern two pinches of ember dust.”':'“The beacons are burning. No traveler will lose the road again. Carry the hearth’s blessing on your blade, friend.”';openPanel('Wren','KEEPER OF THE LAST HEARTH',`<div class="dialogue-speaker"><span class="sprite" data-sprite="14"></span><blockquote>${line}</blockquote></div><p>${!f.cottage?'We need <b>12 timber</b> and <b>8 stone</b>. The workshop is the ruined building northeast of here.':!f.boss?'The guardian warns before its heavy strike. <b>Space</b> to dodge. <b>Q</b> releases an ember burst.':f.hearth?'Follow the bridge east and keep going into the Moonfen. Each beacon needs <b>2 ember dust</b> and a clear space around it.':'The hearth is just southeast of where we’re standing.'}</p><div class="dialogue-actions"><button class="primary" id="dialogue-done">${f.hearth?'Until next time.':'I’ll see what I can do.'}</button><button id="dialogue-journal">Read journal</button></div>`);$('#dialogue-done').onclick=()=>{closePanel();save();};$('#dialogue-journal').onclick=journal;updateHud();}
-function repairPanel(){if(game.flags.cottage){openPanel('The restored workshop','ASHVALE HOLLOW','<p>A steady light fills the workshop. Tools line the walls, ready for the village’s next chapter.</p><button class="primary" id="workbench-btn">Open crafting</button>');$('#workbench-btn').onclick=inventory;return;}openPanel('A place to begin again','RESTORE THE WORKSHOP',`<p>The roof has fallen in, but its foundations are sound. With a little work, this can be the heart of Ashvale’s recovery.</p><div class="stats"><span>${game.bag.wood} / 12 timber</span><span>${game.bag.stone} / 8 stone</span></div><p class="muted">Reward: 2 healing tonics, 35 experience, and the next step toward restoring the hearth.</p><button class="primary" id="repair-btn" ${game.bag.wood<12||game.bag.stone<8?'disabled':''}>Restore workshop</button>`);$('#repair-btn').onclick=()=>{if(game.repair()){closePanel();events();updateHud();banner('The workshop is restored');save();}};}
-function hearthPanel(){if(game.flags.hearth){game.player.hp=game.player.maxHp;toast('The hearth warms you. Health restored.');tone(330,.5);return;}openPanel('The last hearth','A LIGHT IN THE HOLLOW',`<p>A ring of cold stones. The ashes remember a fire that once kept the whole village warm.</p><div class="journal-entry"><p>${game.flags.cottage?'✓ The workshop tools are ready.':'◇ Restore the workshop to mend the hearth.'}<br>${game.bag.core?'✓ You carry the Heart Spark.':'◇ Recover the Heart Spark from the Rootvault guardian.'}</p></div><button class="primary" id="rekindle-btn" ${!game.flags.cottage||!game.bag.core?'disabled':''}>Rekindle the hearth</button>`);$('#rekindle-btn').onclick=()=>{if(game.rekindle()){closePanel();events();updateHud();}};}
-function victory(){openPanel('A light in the hollow','CHAPTER I COMPLETE',`<div style="text-align:center"><div style="width:100px;height:100px;margin:auto">${art(10)}</div><h3 class="win">Ashvale has a heartbeat again.</h3><p>The workshop stands. The roots are quiet.<br>And in the hollow, a small fire refuses to go out.</p><div class="stats" style="justify-content:center"><span>Level ${game.player.level}</span><span>${game.player.kills} creatures defeated</span><span>${Math.floor(game.time/60)} minutes adventured</span></div><p class="muted">Chapter II awaits: carry the hearth’s light east to the three Moonfen beacons.<br>Your adventure is saved on this browser.</p><button class="primary" id="keep-playing">On to the Moonfen</button></div>`);$('#keep-playing').onclick=closePanel;}
-function mapPanel(){openPanel('The hollow & beyond','WORLD MAP',`<canvas id="big-map" width="560" height="406" aria-label="Map of Ashvale to the southwest, Whisperwood to the east, the Rootvault to the northeast, and the Moonfen to the southeast."></canvas><div class="map-legend"><span><i style="background:#f8eace"></i>You</span><span><i style="background:#ddb67d"></i>Places of interest</span><span><i style="background:#d77486"></i>Rootbound guardian</span></div><p class="muted">The eastern bridge leads to Whisperwood. Head north to the Rootvault, or keep heading east to reach the Moonfen and its three beacons.</p>`);mapDraw($('#big-map'),true);}
-function help(){openPanel('Finding your feet','HOW TO PLAY',`<div class="help-grid"><span><kbd>WASD / ↑↓←→</kbd> Move</span><span><kbd>Z / Click</kbd> Attack & gather</span><span><kbd>E</kbd> Interact</span><span><kbd>Space</kbd> Dodge</span><span><kbd>Q</kbd> Ember burst</span><span><kbd>R</kbd> Healing tonic</span><span><kbd>I</kbd> Pack & crafting</span><span><kbd>L</kbd> Quest journal</span><span><kbd>M</kbd> World map</span><span><kbd>Esc</kbd> Pause / close</span></div><h3>Make yourself at home</h3><p>Talk to Wren near the hearth to begin. Strike trees and ore to collect supplies. Walk close to people, chests, buildings, and garden plots, then press <b>E</b>.</p><p>Tap or hold <b>Z</b> to chain a crescent cut, rising backhand, and powerful sundering cleave. Keep the chain going within 0.7 seconds; the third hit deals extra damage and breaks resources faster. Your sword aims toward nearby enemies. Point with the mouse to aim freely. Ember burst hits creatures around you; dodging and magic use the teal stamina bar.</p><p class="muted">On touch screens, use the direction pad and action buttons. The game pauses while a panel is open or this tab is hidden. Progress saves on this browser every 15 seconds and after milestones.</p>`);}
-function pause(){openPanel('A moment by the fire','PAUSED',`<div class="menu-actions"><button class="primary" id="resume-btn">Return to Ashvale</button><button id="save-btn">Save adventure</button><button id="controls-btn">Controls & help</button><button id="new-btn" class="danger">Start a new adventure</button></div>`);$('#resume-btn').onclick=closePanel;$('#save-btn').onclick=()=>{if(save())toast('Adventure saved on this browser.');else toast('This browser could not save your adventure.');};$('#controls-btn').onclick=help;$('#new-btn').onclick=()=>{openPanel('Leave this adventure?','START AGAIN','<p>This replaces your saved adventure on this browser. Your current progress will be lost.</p><div class="dialogue-actions"><button id="cancel-reset">Keep my adventure</button><button class="danger" id="confirm-reset">Start again</button></div>');$('#cancel-reset').onclick=pause;$('#confirm-reset').onclick=()=>{game=new Game();try{localStorage.removeItem(SAVE_KEY);}catch{}closePanel();updateHud();toast('A new arrival in Ashvale. Find Wren by the hearth.');save();};};}
-$('#start-btn').onclick=()=>{if(!ready)return;started=true;$('#start-screen').remove();canvas.focus({preventScroll:true});banner('Ashvale Hollow');toast(saved?'Welcome back to the hollow.':'Find Wren near the hearth. WASD to move · E to speak.');updateHud();};
-$('#close-panel').onclick=closePanel;panel.addEventListener('cancel',()=>{keys.clear();pointerDown=false;});panel.addEventListener('close',()=>{keys.clear();canvas.focus({preventScroll:true});});panel.addEventListener('click',e=>{if(e.target===panel){const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)closePanel();}});
-$('#inventory-btn').onclick=()=>started&&inventory();$('#journal-btn').onclick=()=>started&&journal();$('#map-btn').onclick=()=>started&&mapPanel();$('#menu-btn').onclick=()=>started&&pause();$('#help-btn').onclick=help;$('#sound-btn').onclick=setSound;$('#touch-interact').onclick=()=>action('interact');document.querySelectorAll('[data-action]').forEach(b=>b.onclick=()=>action(b.dataset.action));
-window.addEventListener('keydown',e=>{if(!started||panel.open)return;const key=e.key.toLowerCase();if([' ','arrowup','arrowdown','arrowleft','arrowright','w','a','s','d','z','q','r','e'].includes(key))e.preventDefault();if(panel.open)return;if(e.repeat)return;keys.add(key);if(key==='z')action('attack');if(key==='e')action('interact');if(key==='q')action('spell');if(key==='r')action('heal');if(key===' ')action('dash');if(key==='i')inventory();if(key==='l')journal();if(key==='m')mapPanel();if(key==='escape')pause();if(key==='?'||key==='h')help();});window.addEventListener('keyup',e=>keys.delete(e.key.toLowerCase()));window.addEventListener('blur',()=>{keys.clear();pointerDown=false;});document.addEventListener('visibilitychange',()=>{keys.clear();pointerDown=false;if(started)save();});window.addEventListener('pagehide',()=>{if(started)save();});
-canvas.addEventListener('pointerdown',e=>{if(!started||panel.open)return;if(e.pointerType==='touch')return;canvas.setPointerCapture(e.pointerId);const r=canvas.getBoundingClientRect();game.player.angle=Math.atan2((e.clientY-r.top)/zoom+cam.y-game.player.y,(e.clientX-r.left)/zoom+cam.x-game.player.x);pointerDown=true;action('attack');});canvas.addEventListener('pointermove',e=>{if(pointerDown){const r=canvas.getBoundingClientRect();game.player.angle=Math.atan2((e.clientY-r.top)/zoom+cam.y-game.player.y,(e.clientX-r.left)/zoom+cam.x-game.player.x);}});canvas.addEventListener('pointerup',()=>pointerDown=false);canvas.addEventListener('pointercancel',()=>pointerDown=false);canvas.addEventListener('contextmenu',e=>e.preventDefault());
-document.querySelectorAll('[data-key]').forEach(b=>{b.addEventListener('pointerdown',e=>{e.preventDefault();b.setPointerCapture(e.pointerId);keys.add(b.dataset.key.toLowerCase());});for(const name of ['pointerup','pointercancel','lostpointercapture'])b.addEventListener(name,()=>keys.delete(b.dataset.key.toLowerCase()));});
-function loop(now){let dt=Math.min((now-last)/1000||.016,.035);last=now;if(started&&!panel.open&&!document.hidden){const x=(keys.has('d')||keys.has('arrowright')?1:0)-(keys.has('a')||keys.has('arrowleft')?1:0),y=(keys.has('s')||keys.has('arrowdown')?1:0)-(keys.has('w')||keys.has('arrowup')?1:0);if(hitstop>0)hitstop=Math.max(0,hitstop-dt);else game.update(dt,{x,y,attack:keys.has('z')||pointerDown});events();saveTimer+=dt;if(saveTimer>15){save();saveTimer=0;}}shake=Math.max(0,shake-dt*18);render(now);hudTimer+=dt;if(hudTimer>.12){updateHud();hudTimer=0;}requestAnimationFrame(loop);}
-requestAnimationFrame(loop);updateHud();
-if(document.modelContext?.registerTool){const controller=new AbortController();const register=t=>{try{Promise.resolve(document.modelContext.registerTool(t,{signal:controller.signal})).catch(()=>{});}catch{}};register({name:'read_adventure',description:'Read the current player health, supplies and quest milestones in Ashvale.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>({health:game.player.hp,level:game.player.level,supplies:{...game.bag},milestones:{...game.flags}})});register({name:'open_adventure_journal',description:'Open the quest journal in the game. Does not complete any quests.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:false},execute:()=>{if(!started)throw new Error('Enter the hollow first.');journal();return{opened:'journal'};}});window.addEventListener('pagehide',()=>controller.abort(),{once:true});}
+requestAnimationFrame(loop);
+UI.updateHud();
+
+// --------------------------------------------------- optional WebMCP tools
+if(document.modelContext?.registerTool){
+ const controller = new AbortController();
+ const register = t => { try { Promise.resolve(document.modelContext.registerTool(t, { signal:controller.signal })).catch(()=>{}); } catch {} };
+ register({ name:'read_adventure', description:'Read the current player health, gear, supplies and quest progress in Ashvale.',
+  inputSchema:{ type:'object', properties:{}, additionalProperties:false }, annotations:{ readOnlyHint:true },
+  execute: () => ({ health:game.player.hp, level:game.player.level, region:ZONES[game.zone].name,
+   weapon:WEAPONS[game.gear.weapon].name, outfit:game.gear.outfit, supplies:{ ...game.bag },
+   milestones:{ ...game.flags },
+   quests:Object.fromEntries(Object.entries(game.quests).map(([k,v]) => [k, v.state])) }) });
+ register({ name:'open_adventure_journal', description:'Open the quest journal in the game. Does not complete any quests.',
+  inputSchema:{ type:'object', properties:{}, additionalProperties:false }, annotations:{ readOnlyHint:false },
+  execute: () => { if(!started) throw new Error('Enter the hollow first.'); UI.journal(); return { opened:'journal' }; } });
+ window.addEventListener('pagehide', () => controller.abort(), { once:true });
+}

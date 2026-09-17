@@ -12,7 +12,7 @@ export const T = {
 };
 // Tiles that block movement. Cinders (18) are walkable but hurt.
 export const SOLID = new Set([T.VOID, T.WATER, T.ROCK, T.LAVA, T.CHASM, T.WALL]);
-export const HAZARD = { [T.CINDER]: 7 };   // damage per second while standing on it
+export const HAZARD = { [T.CINDER]: 6 };   // damage per tick while standing on it
 
 export const ITEMS = {
  wood: 'Timber', stone: 'Stone', herb: 'Moonleaf', essence: 'Ember dust', potion: 'Healing tonic', core: 'Heart spark',
@@ -90,25 +90,25 @@ export const HEAVY = {
 // The starting hearthblade must stay at 17 so legacy damage numbers hold.
 // ---------------------------------------------------------------------------
 export const WEAPONS = {
- hearthblade:{ id:'hearthblade', name:'Worn hearthblade', kind:'sword', power:17, tier:1, trail:'#f7cd92', blade:'#d9c9a6',
+ hearthblade:{ id:'hearthblade', short:'Hearthblade', name:'Worn hearthblade', kind:'sword', power:17, tier:1, trail:'#f7cd92', blade:'#d9c9a6',
   desc:'The blade Wren pressed into your hands. Honest steel, badly nicked.', perk:'' },
- tempered:{ id:'tempered', name:'Tempered blade', kind:'sword', power:24, tier:2, trail:'#ffe0a6', blade:'#e8dcb4',
+ tempered:{ id:'tempered', short:'Tempered', name:'Tempered blade', kind:'sword', power:24, tier:2, trail:'#ffe0a6', blade:'#e8dcb4',
   desc:'Reforged at the village workbench. It holds an edge now.', perk:'' },
- fenrazor:{ id:'fenrazor', name:'Fen razor', kind:'dagger', power:19, tier:2, trail:'#b8f1e3', blade:'#cdeee6', speed:1.25,
+ fenrazor:{ id:'fenrazor', short:'Fen razor', name:'Fen razor', kind:'dagger', power:19, tier:2, trail:'#b8f1e3', blade:'#cdeee6', speed:1.25,
   desc:'A fenstalker knife. Four cuts before a heavier blade finishes one.', perk:'bleed', perkText:'Bleed · finishers leave a wound that keeps burning' },
- rootcleaver:{ id:'rootcleaver', name:'Rootcleaver', kind:'great', power:38, tier:3, trail:'#9fd7a2', blade:'#b6c9a8',
+ rootcleaver:{ id:'rootcleaver', short:'Rootcleaver', name:'Rootcleaver', kind:'great', power:38, tier:3, trail:'#9fd7a2', blade:'#b6c9a8',
   desc:'Cut from the Bramble Warden’s own heartwood. It remembers the forest.', perk:'stagger', perkText:'Heavy poise · staggers most creatures in two hits' },
- wardenpike:{ id:'wardenpike', name:'Warden’s pike', kind:'spear', power:26, tier:3, trail:'#cbd8ef', blade:'#dfe6f4',
+ wardenpike:{ id:'wardenpike', short:'Pike', name:'Warden’s pike', kind:'spear', power:26, tier:3, trail:'#cbd8ef', blade:'#dfe6f4',
   desc:'Hearthgate watch issue. Reach enough to fight from outside a claw’s arc.', perk:'reach', perkText:'Long reach · strikes land from well outside melee range' },
- emberbrand:{ id:'emberbrand', name:'Emberbrand', kind:'sword', power:33, tier:4, trail:'#ffa257', blade:'#ffcb8b',
+ emberbrand:{ id:'emberbrand', short:'Emberbrand', name:'Emberbrand', kind:'sword', power:33, tier:4, trail:'#ffa257', blade:'#ffcb8b',
   desc:'Quenched in the hearth’s own coals. The steel never quite cools.', perk:'burn', perkText:'Burn · struck enemies smoulder for extra damage' },
- moonsaber:{ id:'moonsaber', name:'Moonlit saber', kind:'saber', power:30, tier:4, trail:'#c9d9ff', blade:'#e6ecff', speed:1.12,
+ moonsaber:{ id:'moonsaber', short:'Saber', name:'Moonlit saber', kind:'saber', power:30, tier:4, trail:'#c9d9ff', blade:'#e6ecff', speed:1.12,
   desc:'Moonsteel folded under an open sky. It finds the gap on its own.', perk:'crit', perkText:'Keen · +18% critical strike chance' },
- stoneheart:{ id:'stoneheart', name:'Stoneheart maul', kind:'maul', power:46, tier:5, trail:'#d8c5a4', blade:'#b9a98e',
+ stoneheart:{ id:'stoneheart', short:'Maul', name:'Stoneheart maul', kind:'maul', power:46, tier:5, trail:'#d8c5a4', blade:'#b9a98e',
   desc:'A Warren rockling’s fist, bound to a haft. Slow. Final.', perk:'shock', perkText:'Shockwave · finishers crack the ground around the impact' },
- stormglaive:{ id:'stormglaive', name:'Stormcaller glaive', kind:'glaive', power:36, tier:5, trail:'#a9e8ff', blade:'#d8f4ff',
+ stormglaive:{ id:'stormglaive', short:'Glaive', name:'Stormcaller glaive', kind:'glaive', power:36, tier:5, trail:'#a9e8ff', blade:'#d8f4ff',
   desc:'Crystal from the deep warrens, still humming with weather.', perk:'chain', perkText:'Chain spark · spinning finishers arc between enemies' },
- reforged:{ id:'reforged', name:'The Reforged Hearthblade', kind:'sword', power:54, tier:6, trail:'#ffd88a', blade:'#fff0c4', speed:1.08,
+ reforged:{ id:'reforged', short:'Reforged', name:'The Reforged Hearthblade', kind:'sword', power:54, tier:6, trail:'#ffd88a', blade:'#fff0c4', speed:1.08,
   desc:'Hearth-fire, moonsteel and a heart spark. The last light, made sharp.', perk:'hearth', perkText:'Hearthlight · finishers heal you and burn what they touch' }
 };
 export const WEAPON_ORDER = ['hearthblade','tempered','fenrazor','wardenpike','rootcleaver','moonsaber','emberbrand','stormglaive','stoneheart','reforged'];
@@ -210,14 +210,14 @@ export const ENEMIES = {
  shade:    { name:'Ash shade',    hp:96,  dmg:19, speed:96,  xp:52,  ai:'blinker',sprite:13, w:54,  h:50, poise:24, drops:{essence:4, cinder:1}, tint:'shade' },
  rockling: { name:'Rockling',     hp:170, dmg:21, speed:44,  xp:56,  ai:'chase',  sprite:5,  w:60,  h:56, poise:110, armor:6, drops:{stone:3, iron:2}, tint:'rock' },
  crawler:  { name:'Deep crawler', hp:110, dmg:18, speed:110, xp:50,  ai:'lunger', sprite:12, w:52,  h:45, poise:30, drops:{crystal:1, fang:1}, tint:'crawl' },
- imp:      { name:'Cinder imp',   hp:104, dmg:20, speed:92,  xp:58,  ai:'caster', sprite:13, w:50,  h:45, poise:20, drops:{cinder:2}, tint:'fire', shot:{speed:210, dmg:20, color:'#ffb066'} },
+ imp:      { name:'Cinder imp',   hp:104, dmg:20, speed:92,  xp:58,  ai:'caster', sprite:13, w:50,  h:45, poise:20, drops:{cinder:2}, tint:'flame', shot:{speed:210, dmg:20, color:'#ffb066', element:'fire', burn:true} },
  golem:    { name:'Ash golem',    hp:240, dmg:27, speed:46,  xp:88,  ai:'slammer',sprite:5,  w:72,  h:66, poise:150, armor:10, drops:{cinder:3, moonsteel:1}, tint:'ash' },
  // Bosses
  guardian: { name:'The Rootbound',        hp:340, dmg:19, speed:47, xp:100, ai:'boss-root',   sprite:12, w:112, h:98,  poise:999, boss:true, tint:'purple' },
  bramble:  { name:'The Bramble Warden',   hp:900, dmg:24, speed:58, xp:260, ai:'boss-bramble',sprite:4,  w:150, h:160, poise:999, boss:true, tint:'bramble' },
- devourer: { name:'The Warren Devourer',  hp:1450,dmg:30, speed:76, xp:420, ai:'boss-devour', sprite:12, w:136, h:120, poise:999, boss:true, tint:'devour' },
+ devourer: { name:'The Warren Devourer',  hp:1450,dmg:30, speed:76, xp:420, ai:'boss-devour', sprite:12, w:168, h:150, poise:999, boss:true, tint:'devour' },
  choirlord:{ name:'The Ashen Choirmaster',hp:1050,dmg:26, speed:70, xp:330, ai:'boss-choir',  sprite:14, w:74,  h:86,  poise:999, boss:true, tint:'choir' },
- tyrant:   { name:'The Cinder Tyrant',    hp:2400,dmg:34, speed:64, xp:900, ai:'boss-tyrant', sprite:11, w:168, h:166, poise:999, boss:true, tint:'fire' }
+ tyrant:   { name:'The Cinder Tyrant',    hp:2400,dmg:34, speed:64, xp:900, ai:'boss-tyrant', sprite:12, w:196, h:182, poise:999, boss:true, tint:'molten' }
 };
 
 export const clamp = (v,a,b) => Math.max(a, Math.min(b, v));

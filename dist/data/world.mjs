@@ -46,19 +46,21 @@ export function makeMap(){
 // ZONE 2 — Hearthgate, the walled town.
 // =========================================================================
 export const TOWN_BUILDINGS = [
- { id:'temple',  x:8,  y:7,  w:11, h:8, style:'temple', name:'Chapel of the Last Light', door:[13,15] },
- { id:'hall',    x:23, y:7,  w:12, h:8, style:'hall',   name:'Wayfarers\u2019 Hall',      door:[28,15] },
- { id:'granary', x:41, y:7,  w:9,  h:7, style:'keep',   name:'The Granary',              door:[45,14] },
- { id:'loom',    x:52, y:7,  w:12, h:7, style:'loom',   name:'Lys\u2019s Loom',           door:[57,14] },
- { id:'forge',   x:11, y:17, w:11, h:9, style:'forge',  name:'Dain\u2019s Forge',         door:[16,26] },
- { id:'tavern',  x:51, y:17, w:13, h:9, style:'tavern', name:'The Gilded Lantern',       door:[57,26] },
- { id:'alchemy', x:10, y:33, w:10, h:6, style:'house',  name:'Sera\u2019s Stillroom',     door:[14,39] },
- { id:'barracks',x:56, y:33, w:12, h:6, style:'keep',   name:'Watch Barracks',           door:[61,39] },
- { id:'house1',  x:24, y:33, w:7,  h:6, style:'house',  name:'Row houses',               door:[27,39] },
- { id:'house2',  x:40, y:33, w:7,  h:6, style:'house',  name:'Row houses',               door:[43,39] },
- { id:'house3',  x:48, y:33, w:7,  h:6, style:'house',  name:'Row houses',               door:[51,39] },
- { id:'house4',  x:12, y:45, w:8,  h:3, style:'house',  name:'Dockside cottages',        door:[15,48] },
- { id:'house5',  x:46, y:45, w:8,  h:3, style:'house',  name:'Dockside cottages',        door:[49,48] }
+ { id:'temple',  x:8,  y:7,  w:9,  h:6, style:'temple', name:'Chapel of the Last Light', door:[12,13] },
+ { id:'hall',    x:22, y:7,  w:10, h:6, style:'hall',   name:'Wayfarers\u2019 Hall',      door:[26,13] },
+ { id:'granary', x:42, y:7,  w:7,  h:5, style:'keep',   name:'The Granary',              door:[45,12] },
+ { id:'loom',    x:54, y:7,  w:9,  h:5, style:'loom',   name:'Lys\u2019s Loom',           door:[58,12] },
+ { id:'forge',   x:12, y:18, w:9,  h:6, style:'forge',  name:'Dain\u2019s Forge',         door:[16,24] },
+ { id:'tavern',  x:52, y:18, w:10, h:6, style:'tavern', name:'The Gilded Lantern',       door:[56,24] },
+ { id:'house8',  x:23, y:18, w:6,  h:5, style:'house',  name:'Upper row',                door:[25,23] },
+ { id:'house7',  x:64, y:18, w:6,  h:5, style:'house',  name:'Wallside row',             door:[66,23] },
+ { id:'alchemy', x:10, y:34, w:8,  h:5, style:'house',  name:'Sera\u2019s Stillroom',     door:[13,39] },
+ { id:'barracks',x:58, y:34, w:9,  h:5, style:'keep',   name:'Watch Barracks',           door:[62,39] },
+ { id:'house1',  x:24, y:34, w:6,  h:5, style:'house',  name:'Market row',               door:[26,39] },
+ { id:'house2',  x:42, y:34, w:6,  h:5, style:'house',  name:'Market row',               door:[44,39] },
+ { id:'house3',  x:50, y:34, w:6,  h:5, style:'house',  name:'Market row',               door:[52,39] },
+ { id:'house4',  x:12, y:45, w:7,  h:3, style:'house',  name:'Dockside',                 door:[15,48] },
+ { id:'house5',  x:47, y:45, w:7,  h:3, style:'house',  name:'Dockside',                 door:[50,48] }
 ];
 
 export function makeTown(){
@@ -83,7 +85,7 @@ export function makeTown(){
  fill(m,18,42,4,3,T.BRIDGE); fill(m,35,42,5,3,T.BRIDGE); fill(m,54,42,4,3,T.BRIDGE);
  fill(m,7,45,64,6,T.SAND);
  // Allotments and the orchard
- fill(m,23,48,10,2,T.FIELD); fill(m,65,17,5,8,T.FIELD);
+ fill(m,23,48,10,2,T.FIELD); fill(m,64,7,6,6,T.FIELD); fill(m,22,44,8,2,T.FIELD);
  for(const b of TOWN_BUILDINGS){
   fill(m,b.x,b.y,b.w,b.h,T.WALL);
   fill(m,b.door[0]-1,b.door[1],3,1,T.WOOD);     // doorstep
@@ -250,14 +252,14 @@ export const PORTALS = [
  { id:'p-warren-forest',zone:'warren',x:12,   y:56,   to:'forest', at:[67.5,10], label:'Back to the surface',  sub:'Daylight, somewhere up there.' },
  { id:'p-warren-deep', zone:'warren', x:70.5, y:9.5,  to:'deep',   at:[12,48],   label:'The deep stair',       sub:'Heat rises from the steps below.' },
  { id:'p-deep-warren', zone:'deep',   x:12,   y:50,   to:'warren', at:[70.5,12], label:'Up the deep stair',    sub:'Back toward cold stone.' },
- { id:'p-town-crypt',  zone:'town',   x:20.5, y:10.5, to:'crypt',  at:[10,41],   label:'Crypt stair',          sub:'Beside the chapel. It has not been swept in years.' },
- { id:'p-crypt-town',  zone:'crypt',  x:10,   y:43,   to:'town',   at:[20.5,13.6],label:'Chapel stair',        sub:'Back up into the light.' },
- { id:'d-forge',  zone:'town',  x:16.5, y:26.6, to:'forge',  at:[12,13],   label:'Dain’s Forge',        sub:'Enter the forge', door:true },
- { id:'d-forge-out', zone:'forge', x:12, y:14.4, to:'town',  at:[16.5,27.5],label:'Out to the high street', sub:'Leave the forge', door:true },
- { id:'d-tavern', zone:'town',  x:57.5, y:26.6, to:'tavern', at:[13,13],   label:'The Gilded Lantern',      sub:'Enter the tavern', door:true },
- { id:'d-tavern-out',zone:'tavern',x:13, y:14.4, to:'town',  at:[57.5,27.5],label:'Out to the high street',  sub:'Leave the tavern', door:true },
- { id:'d-hall',   zone:'town',  x:36.5, y:18.6, to:'hall',   at:[12,13],   label:'Wayfarers’ Hall',    sub:'Enter the hall', door:true },
- { id:'d-hall-out',zone:'hall', x:12,  y:14.4, to:'town',    at:[28.5,17.5],label:'Out to the lane',        sub:'Leave the hall', door:true }
+ { id:'p-town-crypt',  zone:'town',   x:19, y:10.5, to:'crypt',  at:[10,41],   label:'Crypt stair',          sub:'Beside the chapel. It has not been swept in years.' },
+ { id:'p-crypt-town',  zone:'crypt',  x:10,   y:43,   to:'town',   at:[19,13.6],label:'Chapel stair',        sub:'Back up into the light.' },
+ { id:'d-forge',  zone:'town',  x:16.5, y:24.6, to:'forge',  at:[12,13],   label:'Dain’s Forge',        sub:'Enter the forge', door:true },
+ { id:'d-forge-out', zone:'forge', x:12, y:14.4, to:'town',  at:[16.5,25.6],label:'Out to the high street', sub:'Leave the forge', door:true },
+ { id:'d-tavern', zone:'town',  x:56.5, y:24.6, to:'tavern', at:[13,13],   label:'The Gilded Lantern',      sub:'Enter the tavern', door:true },
+ { id:'d-tavern-out',zone:'tavern',x:13, y:14.4, to:'town',  at:[56.5,25.6],label:'Out to the high street',  sub:'Leave the tavern', door:true },
+ { id:'d-hall',   zone:'town',  x:26.5, y:13.6, to:'hall',   at:[12,13],   label:'Wayfarers’ Hall',    sub:'Enter the hall', door:true },
+ { id:'d-hall-out',zone:'hall', x:12,  y:14.4, to:'town',    at:[26.5,14.6],label:'Out to the lane',        sub:'Leave the hall', door:true }
 ];
 
 // Named map labels drawn on the world map panel.
